@@ -11,6 +11,7 @@ type MusicianProfile = {
   avatar_url: string;
   skills: string;
   looking_for: string;
+  location: string;
   website: string;
 };
 
@@ -30,7 +31,7 @@ export default function Profile({ session }: { session: Session }) {
 
       const { data, error, status } = await supabase
         .from('profiles')
-        .select(`username, full_name, avatar_url, skills, looking_for, website`)
+        .select(`username, full_name, avatar_url, skills, looking_for, location, website`)
         .eq('id', session?.user.id)
         .single();
       if (error && status !== 406) {
@@ -102,7 +103,7 @@ export default function Profile({ session }: { session: Session }) {
         <View className="flex-row items-center mt-4 space-x-4">
           <View className="flex-row items-center bg-gray-100 px-3 py-1.5 rounded-full">
             <MapPin size={14} color="#6b7280" />
-            <Text className="text-gray-600 text-xs ml-1.5">San Francisco, CA</Text>
+            <Text className="text-gray-600 text-xs ml-1.5">{profile?.location || 'Location not set'}</Text>
           </View>
           <View className="flex-row items-center bg-emerald-50 px-3 py-1.5 rounded-full">
             <Music size={14} color="#059669" />

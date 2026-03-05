@@ -1,6 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useRouter } from 'expo-router';
-import { AlignLeft, ArrowLeft, Camera, Globe, Music, Plus, User, X } from 'lucide-react-native';
+import { AlignLeft, ArrowLeft, Camera, Globe, MapPin, Music, Plus, User, X } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSession } from '../hooks/useSession';
@@ -31,6 +31,7 @@ export default function EditProfileScreen() {
         username: '',
         full_name: '',
         website: '',
+        location: '',
         avatar_url: '',
         skills: '',
         looking_for: '',
@@ -47,7 +48,7 @@ export default function EditProfileScreen() {
 
             const { data, error, status } = await supabase
                 .from('profiles')
-                .select(`username, full_name, website, avatar_url, skills, looking_for`)
+                .select(`username, full_name, website, location, avatar_url, skills, looking_for`)
                 .eq('id', session?.user.id)
                 .single();
 
@@ -60,6 +61,7 @@ export default function EditProfileScreen() {
                     username: data.username || '',
                     full_name: data.full_name || '',
                     website: data.website || '',
+                    location: data.location || '',
                     avatar_url: data.avatar_url || '',
                     skills: data.skills || '',
                     looking_for: data.looking_for || '',
@@ -258,6 +260,19 @@ export default function EditProfileScreen() {
                                             onChangeText={(text) => handleChange('website', text)}
                                             placeholder="https://yourband.com"
                                             autoCapitalize="none"
+                                        />
+                                    </View>
+                                </View>
+
+                                <View>
+                                    <Text className="text-gray-700 font-medium mb-1.5 text-sm">Location</Text>
+                                    <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-xl px-3 h-12">
+                                        <MapPin size={18} color="#6b7280" />
+                                        <TextInput
+                                            className="flex-1 ml-3 text-gray-900"
+                                            value={formData.location}
+                                            onChangeText={(text) => handleChange('location', text)}
+                                            placeholder="San Francisco, CA"
                                         />
                                     </View>
                                 </View>
