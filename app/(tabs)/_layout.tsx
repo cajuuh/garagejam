@@ -21,13 +21,13 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Tab One',
+          title: 'Profile',
           tabBarIcon: ({ color }) => (
             <SymbolView
               name={{
-                ios: 'chevron.left.forwardslash.chevron.right',
-                android: 'code',
-                web: 'code',
+                ios: 'person',
+                android: 'person',
+                web: 'person',
               }}
               tintColor={color}
               size={28}
@@ -50,15 +50,32 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="two"
+        name="home"
         options={{
-          title: 'Tab Two',
+          title: 'Home',
           tabBarIcon: ({ color }) => (
             <SymbolView
               name={{
-                ios: 'chevron.left.forwardslash.chevron.right',
-                android: 'code',
-                web: 'code',
+                ios: 'house',
+                android: 'home',
+                web: 'home',
+              }}
+              tintColor={color}
+              size={28}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="search"
+        options={{
+          title: 'Search',
+          tabBarIcon: ({ color }) => (
+            <SymbolView
+              name={{
+                ios: 'magnifyingglass',
+                android: 'search',
+                web: 'search',
               }}
               tintColor={color}
               size={28}
