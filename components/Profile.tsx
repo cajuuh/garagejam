@@ -96,7 +96,7 @@ export default function Profile({ session }: { session: Session }) {
         </Text>
         <Text className="text-gray-500 text-sm mt-1 text-center">@{profile?.username || 'username'}</Text>
 
-        {profile?.website && (
+        {!!profile?.website && (
           <Text className="text-emerald-600 text-sm mt-2 font-medium">{profile.website}</Text>
         )}
 
