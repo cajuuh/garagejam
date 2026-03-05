@@ -74,8 +74,14 @@ export default function Profile({ session }: { session: Session }) {
         <View className="absolute -bottom-16 left-0 right-0 items-center">
           <View className="relative">
             <Image
-              source={{ uri: profile?.avatar_url || 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=300&auto=format&fit=crop' }}
+              source={
+                profile?.avatar_url
+                  ? { uri: profile.avatar_url }
+                  : require('../assets/images/default-avatar.png')
+              }
               className="w-32 h-32 rounded-full border-4 border-white bg-gray-200"
+              style={{ width: 128, height: 128 }}
+              resizeMode="cover"
             />
             <View className="absolute bottom-2 right-2 bg-emerald-500 w-6 h-6 rounded-full border-2 border-white" />
           </View>

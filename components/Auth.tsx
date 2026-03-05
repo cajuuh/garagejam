@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import { ArrowRight, Lock, Mail, Music2 } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { ActivityIndicator, Alert, AppState, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -16,6 +17,7 @@ AppState.addEventListener('change', (state) => {
 });
 
 export default function Auth() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -28,21 +30,6 @@ export default function Auth() {
     });
 
     if (error) Alert.alert(error.message);
-    setLoading(false);
-  }
-
-  async function signUpWithEmail() {
-    setLoading(true);
-    const {
-      data: { session },
-      error,
-    } = await supabase.auth.signUp({
-      email: email,
-      password: password,
-    });
-
-    if (error) Alert.alert(error.message);
-    if (!session) Alert.alert('Please check your inbox for email verification!');
     setLoading(false);
   }
 
@@ -112,7 +99,7 @@ export default function Auth() {
 
         <View className="flex-row justify-center items-center mt-2">
           <Text className="text-gray-500 text-base">New here? </Text>
-          <TouchableOpacity onPress={() => signUpWithEmail()}>
+          <TouchableOpacity onPress={() => router.push('/sign-up')}>
             <Text className="text-black font-bold text-base underline">Create an account</Text>
           </TouchableOpacity>
         </View>

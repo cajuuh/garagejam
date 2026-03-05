@@ -1,9 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { Alert, FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
-import { StyleSheet, View, Alert, FlatList, Text, RefreshControl } from 'react-native';
+
+interface Profile {
+  id: string;
+  full_name?: string;
+  username?: string;
+  skills?: string;
+}
 
 export default function HomeScreen() {
-  const [profiles, setProfiles] = useState([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
@@ -23,7 +30,7 @@ export default function HomeScreen() {
         Alert.alert(error.message);
       }
     } finally {
-        setRefreshing(false);
+      setRefreshing(false);
     }
   };
 
@@ -31,7 +38,7 @@ export default function HomeScreen() {
     fetchProfiles();
   };
 
-  const renderItem = ({ item }) => (
+  const renderItem = ({ item }: { item: Profile }) => (
     <View style={styles.profileItem}>
       <Text style={styles.profileName}>{item.full_name || item.username}</Text>
       <Text>{item.skills}</Text>

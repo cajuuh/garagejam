@@ -1,6 +1,6 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
@@ -9,7 +9,6 @@ import '../global.css';
 
 import { useColorScheme } from '@/components/useColorScheme';
 import { Session } from '@supabase/supabase-js';
-import Auth from '../components/Auth';
 import { supabase } from '../lib/supabase';
 
 export {
@@ -31,6 +30,8 @@ export default function RootLayout() {
   });
   const [session, setSession] = useState<Session | null>(null);
   const [isAuthLoaded, setIsAuthLoaded] = useState(false);
+  const segments = useSegments();
+  const router = useRouter();
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
@@ -59,12 +60,20 @@ export default function RootLayout() {
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (!isAuthLoaded) return;
+
+    const inAuthGroup = segments[0] === 'auth' || segments[0] === 'sign-up';
+
+    if (!session && !inAuthGroup) {
+      router.replace('/auth');
+    } else if (session && segments[0] === 'auth') {
+      router.replace('/');
+    }
+  }, [session, segments, isAuthLoaded]);
+
   if (!loaded || !isAuthLoaded) {
     return null;
-  }
-
-  if (!session) {
-    return <Auth />;
   }
 
   return <RootLayoutNav />;
@@ -77,6 +86,9 @@ function RootLayoutNav() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="auth" options={{ headerShown: false }} />
+        <Stack.Screen name="sign-up" options={{ headerShown: false }} />
+        <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
         <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
       </Stack>
     </ThemeProvider>
