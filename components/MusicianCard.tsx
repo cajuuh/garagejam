@@ -1,7 +1,7 @@
 import { Audio } from 'expo-av';
 import { Pause, Play } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { Image, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 export interface MusicianProfile {
     id: string;
@@ -10,6 +10,7 @@ export interface MusicianProfile {
     skills?: string;
     avatar_url?: string;
     intro_audio_url?: string;
+    looking_for?: string;
 }
 
 export default function MusicianCard({ profile }: { profile: MusicianProfile }) {
@@ -63,8 +64,17 @@ export default function MusicianCard({ profile }: { profile: MusicianProfile }) 
                 {profile.full_name || "Músico"}
             </Text>
 
+            {/* Description / Looking For */}
+            {!!profile.looking_for && (
+                <ScrollView className="max-h-24 w-full mb-4" nestedScrollEnabled>
+                    <Text className="text-xs text-neutral-500 text-center px-2 leading-4">
+                        {profile.looking_for}
+                    </Text>
+                </ScrollView>
+            )}
+
             {/* 2. Audio Section (O bloco central do desenho) */}
-            {profile.intro_audio_url && (
+            {!!profile.intro_audio_url && (
                 <TouchableOpacity
                     onPress={playSound}
                     activeOpacity={0.7}
