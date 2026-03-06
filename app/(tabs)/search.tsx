@@ -18,7 +18,7 @@ export default function SearchScreen() {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .ilike('skills', `%${searchQuery}%`);
+        .or(`full_name.ilike.%${searchQuery}%,username.ilike.%${searchQuery}%,skills.ilike.%${searchQuery}%,looking_for.ilike.%${searchQuery}%`);
       if (error) {
         throw error;
       }
@@ -70,7 +70,7 @@ export default function SearchScreen() {
           <SearchIcon size={20} color="#9ca3af" />
           <TextInput
             className="flex-1 ml-3 text-gray-900 dark:text-white text-base font-medium"
-            placeholder="Guitar, Drums, Vocals..."
+            placeholder="Search skills, name, or keywords..."
             placeholderTextColor="#9ca3af"
             value={searchQuery}
             onChangeText={setSearchQuery}
