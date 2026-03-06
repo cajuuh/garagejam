@@ -1,11 +1,13 @@
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useRouter } from 'expo-router';
 import { ArrowLeft, Camera, Lock, Mail, User } from 'lucide-react-native';
+import { useColorScheme } from 'nativewind';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../lib/supabase';
 
 export default function SignUpScreen() {
+    const { colorScheme } = useColorScheme();
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [image, setImage] = useState<string | null>(null);
@@ -106,18 +108,18 @@ export default function SignUpScreen() {
     };
 
     return (
-        <View className="flex-1 bg-white">
+        <View className="flex-1 bg-white dark:bg-black">
             <Stack.Screen options={{ headerShown: false }} />
 
             {/* Header */}
-            <View className="px-4 pt-12 pb-4 flex-row items-center sticky top-0 z-10 bg-white">
+            <View className="px-4 pt-12 pb-4 flex-row items-center sticky top-0 z-10 bg-white dark:bg-black">
                 <TouchableOpacity
                     onPress={() => router.back()}
-                    className="w-10 h-10 items-center justify-center rounded-full bg-gray-50 active:bg-gray-100"
+                    className="w-10 h-10 items-center justify-center rounded-full bg-gray-50 dark:bg-neutral-900 active:bg-gray-100 dark:active:bg-neutral-800"
                 >
-                    <ArrowLeft size={24} color="#000" />
+                    <ArrowLeft size={24} color={colorScheme === 'dark' ? 'white' : 'black'} />
                 </TouchableOpacity>
-                <Text className="text-xl font-bold text-gray-900 ml-4">Create Account</Text>
+                <Text className="text-xl font-bold text-gray-900 dark:text-white ml-4">Create Account</Text>
             </View>
 
             <KeyboardAvoidingView
@@ -129,7 +131,7 @@ export default function SignUpScreen() {
                     {/* Avatar Picker */}
                     <View className="items-center mt-6 mb-8">
                         <TouchableOpacity onPress={pickImage} className="relative">
-                            <View className="w-28 h-28 rounded-full bg-gray-100 items-center justify-center border-2 border-gray-200 overflow-hidden">
+                            <View className="w-28 h-28 rounded-full bg-gray-100 dark:bg-neutral-900 items-center justify-center border-2 border-gray-200 dark:border-neutral-800 overflow-hidden">
                                 {image ? (
                                     <Image source={{ uri: image }} className="w-full h-full" />
                                 ) : (
@@ -146,19 +148,20 @@ export default function SignUpScreen() {
                                 <Camera size={16} color="white" />
                             </View>
                         </TouchableOpacity>
-                        <Text className="text-gray-500 text-sm mt-3">Upload Profile Photo</Text>
+                        <Text className="text-gray-500 dark:text-gray-400 text-sm mt-3">Upload Profile Photo</Text>
                     </View>
 
                     {/* Form Fields */}
                     <View className="space-y-4 mb-10">
 
                         <View>
-                            <Text className="text-gray-700 font-semibold mb-2 ml-1">Username</Text>
-                            <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-2xl px-4 h-14">
+                            <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2 ml-1">Username</Text>
+                            <View className="flex-row items-center bg-gray-50 dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-2xl px-4 h-14">
                                 <User size={20} color="#6b7280" />
                                 <TextInput
-                                    className="flex-1 ml-3 text-gray-900 text-base"
+                                    className="flex-1 ml-3 text-gray-900 dark:text-white text-base"
                                     placeholder="johndoe"
+                                    placeholderTextColor="#9ca3af"
                                     value={formData.username}
                                     onChangeText={(t) => setFormData({ ...formData, username: t })}
                                     autoCapitalize="none"
@@ -167,12 +170,13 @@ export default function SignUpScreen() {
                         </View>
 
                         <View>
-                            <Text className="text-gray-700 font-semibold mb-2 ml-1">Full Name</Text>
-                            <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-2xl px-4 h-14">
+                            <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2 ml-1">Full Name</Text>
+                            <View className="flex-row items-center bg-gray-50 dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-2xl px-4 h-14">
                                 <User size={20} color="#6b7280" />
                                 <TextInput
-                                    className="flex-1 ml-3 text-gray-900 text-base"
+                                    className="flex-1 ml-3 text-gray-900 dark:text-white text-base"
                                     placeholder="John Doe"
+                                    placeholderTextColor="#9ca3af"
                                     value={formData.full_name}
                                     onChangeText={(t) => setFormData({ ...formData, full_name: t })}
                                 />
@@ -180,12 +184,13 @@ export default function SignUpScreen() {
                         </View>
 
                         <View>
-                            <Text className="text-gray-700 font-semibold mb-2 ml-1">Email</Text>
-                            <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-2xl px-4 h-14">
+                            <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2 ml-1">Email</Text>
+                            <View className="flex-row items-center bg-gray-50 dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-2xl px-4 h-14">
                                 <Mail size={20} color="#6b7280" />
                                 <TextInput
-                                    className="flex-1 ml-3 text-gray-900 text-base"
+                                    className="flex-1 ml-3 text-gray-900 dark:text-white text-base"
                                     placeholder="hello@example.com"
+                                    placeholderTextColor="#9ca3af"
                                     value={formData.email}
                                     onChangeText={(t) => setFormData({ ...formData, email: t })}
                                     autoCapitalize="none"
@@ -195,12 +200,13 @@ export default function SignUpScreen() {
                         </View>
 
                         <View>
-                            <Text className="text-gray-700 font-semibold mb-2 ml-1">Password</Text>
-                            <View className="flex-row items-center bg-gray-50 border border-gray-200 rounded-2xl px-4 h-14">
+                            <Text className="text-gray-700 dark:text-gray-300 font-semibold mb-2 ml-1">Password</Text>
+                            <View className="flex-row items-center bg-gray-50 dark:bg-neutral-900 border border-gray-200 dark:border-neutral-800 rounded-2xl px-4 h-14">
                                 <Lock size={20} color="#6b7280" />
                                 <TextInput
-                                    className="flex-1 ml-3 text-gray-900 text-base"
+                                    className="flex-1 ml-3 text-gray-900 dark:text-white text-base"
                                     placeholder="••••••••"
+                                    placeholderTextColor="#9ca3af"
                                     value={formData.password}
                                     onChangeText={(t) => setFormData({ ...formData, password: t })}
                                     secureTextEntry
@@ -212,14 +218,14 @@ export default function SignUpScreen() {
 
                     {/* Submit Button */}
                     <TouchableOpacity
-                        className="bg-black h-16 rounded-2xl flex-row items-center justify-center shadow-lg shadow-gray-400 active:scale-95 mb-10"
+                        className="bg-black dark:bg-white h-16 rounded-2xl flex-row items-center justify-center shadow-lg shadow-gray-400 active:scale-95 mb-10"
                         onPress={handleSignUp}
                         disabled={loading}
                     >
                         {loading ? (
-                            <ActivityIndicator color="white" />
+                            <ActivityIndicator color={colorScheme === 'dark' ? 'black' : 'white'} />
                         ) : (
-                            <Text className="text-white font-bold text-lg">Create Account</Text>
+                            <Text className="text-white dark:text-black font-bold text-lg">Create Account</Text>
                         )}
                     </TouchableOpacity>
 

@@ -2,13 +2,15 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import * as SystemUI from 'expo-system-ui';
 import { useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import 'react-native-reanimated';
 import 'react-native-url-polyfill/auto';
 import '../global.css';
 
-import { useColorScheme } from '@/components/useColorScheme';
 import { Session } from '@supabase/supabase-js';
+import { useColorScheme } from 'nativewind';
 import { supabase } from '../lib/supabase';
 
 export {
@@ -80,7 +82,21 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
+  const { colorScheme, setColorScheme } = useColorScheme();
+
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      try {
+        // Clear persisted theme to ensure we respect the OS setting on reload
+        localStorage.removeItem('nativewind-color-theme');
+      } catch { }
+    }
+    setColorScheme('system');
+  }, []);
+
+  useEffect(() => {
+    SystemUI.setBackgroundColorAsync(colorScheme === 'dark' ? '#000000' : '#ffffff');
+  }, [colorScheme]);
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
