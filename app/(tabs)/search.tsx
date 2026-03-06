@@ -1,4 +1,4 @@
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { ArrowRight, Search as SearchIcon } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useState } from 'react';
@@ -7,6 +7,7 @@ import { supabase } from '../../lib/supabase';
 
 export default function SearchScreen() {
   const { colorScheme } = useColorScheme();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [profiles, setProfiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -17,7 +18,7 @@ export default function SearchScreen() {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .ilike('skills', `%${searchQuery}%`);
+        .or(`full_name.ilike.%${searchQuery}%,username.ilike.%${searchQuery}%,skills.ilike.%${searchQuery}%,looking_for.ilike.%${searchQuery}%`);
       if (error) {
         throw error;
       }
@@ -32,7 +33,13 @@ export default function SearchScreen() {
   };
 
   const renderItem = ({ item }: { item: any }) => (
-    <TouchableOpacity className="bg-white dark:bg-neutral-900 p-4 rounded-2xl mb-3 shadow-sm border border-gray-100 dark:border-neutral-800 flex-row items-center active:bg-gray-50 dark:active:bg-neutral-800">
+    <TouchableOpacity
+      className="bg-white dark:bg-neutral-900 p-4 rounded-2xl mb-3 shadow-sm border border-gray-100 dark:border-neutral-800 flex-row items-center active:bg-gray-50 dark:active:bg-neutral-800"
+      onPress={() => router.push({
+        pathname: '/user/[id]' as any,
+        params: { id: item.id },
+      })}
+    >
       <Image
         source={{ uri: item.avatar_url || 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=300&auto=format&fit=crop' }}
         className="w-14 h-14 rounded-full bg-gray-200 dark:bg-neutral-800"
@@ -63,7 +70,7 @@ export default function SearchScreen() {
           <SearchIcon size={20} color="#9ca3af" />
           <TextInput
             className="flex-1 ml-3 text-gray-900 dark:text-white text-base font-medium"
-            placeholder="Guitar, Drums, Vocals..."
+            placeholder="Search skills, name, or keywords..."
             placeholderTextColor="#9ca3af"
             value={searchQuery}
             onChangeText={setSearchQuery}
