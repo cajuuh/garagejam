@@ -1,19 +1,27 @@
-import React from 'react';
-import { SymbolView } from 'expo-symbols';
 import { Link, Tabs } from 'expo-router';
-import { Platform, Pressable } from 'react-native';
+import { SymbolView } from 'expo-symbols';
+import React from 'react';
+import { Pressable } from 'react-native';
 
-import Colors from '@/constants/Colors';
-import { useColorScheme } from '@/components/useColorScheme';
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
+import Colors from '@/constants/Colors';
+import { useColorScheme } from 'nativewind';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const { colorScheme } = useColorScheme();
+  const theme = colorScheme ?? 'light';
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme].tint,
+        tabBarActiveTintColor: Colors[theme].tint,
+        tabBarStyle: {
+          backgroundColor: Colors[theme].background,
+        },
+        headerStyle: {
+          backgroundColor: Colors[theme].background,
+        },
+        headerTintColor: Colors[theme].text,
         // Disable the static render of the header on web
         // to prevent a hydration error in React Navigation v6.
         headerShown: useClientOnlyValue(false, true),
@@ -40,7 +48,7 @@ export default function TabLayout() {
                   <SymbolView
                     name={{ ios: 'info.circle', android: 'info', web: 'info' }}
                     size={25}
-                    tintColor={Colors[colorScheme].text}
+                    tintColor={Colors[theme].text}
                     style={{ opacity: pressed ? 0.5 : 1 }}
                   />
                 )}
