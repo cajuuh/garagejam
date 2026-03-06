@@ -1,6 +1,7 @@
+import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { Stack, useRouter } from 'expo-router';
-import { AlignLeft, ArrowLeft, Camera, Globe, MapPin, Music, Plus, User, X } from 'lucide-react-native';
+import { AlignLeft, ArrowLeft, Camera, Globe, MapPin, Mic, Music, Plus, Trash2, User, X } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSession } from '../hooks/useSession';
@@ -25,6 +26,7 @@ export default function EditProfileScreen() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [image, setImage] = useState<string | null>(null);
+    const [audioUri, setAudioUri] = useState<string | null>(null);
     const [customSkill, setCustomSkill] = useState('');
 
     const [formData, setFormData] = useState({
@@ -32,6 +34,7 @@ export default function EditProfileScreen() {
         full_name: '',
         website: '',
         location: '',
+        intro_audio_url: '',
         avatar_url: '',
         skills: '',
         looking_for: '',
@@ -48,7 +51,7 @@ export default function EditProfileScreen() {
 
             const { data, error, status } = await supabase
                 .from('profiles')
-                .select(`username, full_name, website, location, avatar_url, skills, looking_for`)
+                .select(`username, full_name, website, location, avatar_url, intro_audio_url, skills, looking_for`)
                 .eq('id', session?.user.id)
                 .single();
 
@@ -63,6 +66,7 @@ export default function EditProfileScreen() {
                     website: data.website || '',
                     location: data.location || '',
                     avatar_url: data.avatar_url || '',
+                    intro_audio_url: data.intro_audio_url || '',
                     skills: data.skills || '',
                     looking_for: data.looking_for || '',
                 });
@@ -89,6 +93,17 @@ export default function EditProfileScreen() {
         }
     };
 
+    const pickAudio = async () => {
+        const result = await DocumentPicker.getDocumentAsync({
+            type: 'audio/*',
+            copyToCacheDirectory: true,
+        });
+
+        if (!result.canceled) {
+            setAudioUri(result.assets[0].uri);
+        }
+    };
+
     const uploadAvatar = async (userId: string, uri: string) => {
         const response = await fetch(uri);
         const arrayBuffer = await response.arrayBuffer();
@@ -109,21 +124,47 @@ export default function EditProfileScreen() {
         return data.publicUrl;
     };
 
+    const uploadAudio = async (userId: string, uri: string) => {
+        const response = await fetch(uri);
+        const arrayBuffer = await response.arrayBuffer();
+        const fileExt = uri.split('.').pop()?.toLowerCase() ?? 'mp3';
+        const fileName = `${userId}/${Date.now()}_intro.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+            .from('intros')
+            .upload(filePath, arrayBuffer, {
+                contentType: `audio/${fileExt}`,
+                upsert: true,
+            });
+
+        if (uploadError) throw new Error(uploadError.message);
+
+        const { data } = supabase.storage.from('intros').getPublicUrl(filePath);
+        return data.publicUrl;
+    };
+
     async function updateProfile() {
         try {
             setSaving(true);
             if (!session?.user) throw new Error('No user on the session!');
 
             let avatarUrl = formData.avatar_url;
+            let introAudioUrl = formData.intro_audio_url;
 
             if (image) {
                 avatarUrl = await uploadAvatar(session.user.id, image);
+            }
+
+            if (audioUri) {
+                introAudioUrl = await uploadAudio(session.user.id, audioUri);
             }
 
             const updates = {
                 id: session?.user.id,
                 ...formData,
                 avatar_url: avatarUrl,
+                intro_audio_url: introAudioUrl,
                 updated_at: new Date(),
             };
 
@@ -329,6 +370,31 @@ export default function EditProfileScreen() {
                                             </TouchableOpacity>
                                         ))}
                                     </View>
+                                </View>
+
+                                <View>
+                                    <Text className="text-gray-700 font-medium mb-1.5 text-sm">Audio Intro (30s)</Text>
+                                    <View className="bg-gray-50 border border-gray-200 rounded-xl p-3">
+                                        {audioUri || formData.intro_audio_url ? (
+                                            <View className="flex-row items-center justify-between">
+                                                <View className="flex-row items-center">
+                                                    <View className="w-8 h-8 bg-emerald-100 rounded-full items-center justify-center mr-2">
+                                                        <Mic size={16} color="#059669" />
+                                                    </View>
+                                                    <Text className="text-gray-700 text-sm font-medium">Intro Audio Selected</Text>
+                                                </View>
+                                                <TouchableOpacity onPress={() => { setAudioUri(null); handleChange('intro_audio_url', ''); }}>
+                                                    <Trash2 size={18} color="#ef4444" />
+                                                </TouchableOpacity>
+                                            </View>
+                                        ) : (
+                                            <TouchableOpacity onPress={pickAudio} className="flex-row items-center justify-center py-2">
+                                                <Mic size={18} color="#6b7280" />
+                                                <Text className="text-gray-600 font-medium ml-2">Upload Audio File</Text>
+                                            </TouchableOpacity>
+                                        )}
+                                    </View>
+                                    <Text className="text-xs text-gray-400 mt-1 ml-1">Upload a short clip showcasing your skills.</Text>
                                 </View>
 
                                 <View>
