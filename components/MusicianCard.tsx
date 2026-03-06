@@ -65,11 +65,16 @@ export default function MusicianCard({ profile }: { profile: MusicianProfile }) 
 
             {/* Description / Looking For */}
             {!!profile.looking_for && (
-                <ScrollView className="max-h-24 w-full mb-4" nestedScrollEnabled>
-                    <Text className="text-xs text-neutral-500 dark:text-neutral-400 text-center px-2 leading-4">
-                        {profile.looking_for}
+                <View className="w-full mb-4">
+                    <Text className="text-[10px] uppercase font-black text-neutral-400 dark:text-neutral-500 text-center mb-1 tracking-tighter">
+                        Looking For
                     </Text>
-                </ScrollView>
+                    <ScrollView className="max-h-24 w-full" nestedScrollEnabled indicatorStyle={colorScheme === 'dark' ? 'white' : 'black'}>
+                        <Text className="text-xs text-neutral-500 dark:text-neutral-400 text-center px-2 leading-4">
+                            {profile.looking_for}
+                        </Text>
+                    </ScrollView>
+                </View>
             )}
 
             {/* 2. Audio Section (O bloco central do desenho) */}
