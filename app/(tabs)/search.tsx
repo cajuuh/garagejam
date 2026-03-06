@@ -35,7 +35,10 @@ export default function SearchScreen() {
   const renderItem = ({ item }: { item: any }) => (
     <TouchableOpacity
       className="bg-white dark:bg-neutral-900 p-4 rounded-2xl mb-3 shadow-sm border border-gray-100 dark:border-neutral-800 flex-row items-center active:bg-gray-50 dark:active:bg-neutral-800"
-      onPress={() => router.push(`/user/${item.id}`)}
+      onPress={() => router.push({
+        pathname: '/user/[id]' as any,
+        params: { id: item.id },
+      })}
     >
       <Image
         source={{ uri: item.avatar_url || 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=300&auto=format&fit=crop' }}
