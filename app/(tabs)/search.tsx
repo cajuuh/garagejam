@@ -1,5 +1,5 @@
 import { Stack, useRouter } from 'expo-router';
-import { ArrowRight, Filter, Plus, Search as SearchIcon, X } from 'lucide-react-native';
+import { ArrowRight, Clock, Filter, Plus, Search as SearchIcon, X } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Image, Modal, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -14,6 +14,7 @@ export default function SearchScreen() {
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [tempSkill, setTempSkill] = useState('');
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
   const handleSearch = async () => {
     performSearch(searchQuery, activeFilters);
@@ -21,6 +22,14 @@ export default function SearchScreen() {
 
   const performSearch = async (queryText: string, filters: string[]) => {
     try {
+      if (queryText.trim()) {
+        setRecentSearches(prev => {
+          const newSearches = [queryText.trim(), ...prev.filter(s => s.toLowerCase() !== queryText.trim().toLowerCase())];
+          // For persistence, you could save `limitedSearches` to AsyncStorage here.
+          return newSearches.slice(0, 5); // Keep last 5 searches
+        });
+      }
+
       setLoading(true);
       let query = supabase
         .from('profiles')
@@ -108,6 +117,11 @@ export default function SearchScreen() {
             onSubmitEditing={handleSearch}
             returnKeyType="search"
           />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <X size={20} color="#9ca3af" />
+            </TouchableOpacity>
+          )}
         </View>
         <TouchableOpacity
           className="bg-black dark:bg-white h-14 w-14 rounded-2xl items-center justify-center shadow-md active:scale-95"
@@ -137,20 +151,46 @@ export default function SearchScreen() {
         </View>
       )}
 
-      <FlatList
-        data={profiles}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{ paddingBottom: 100 }}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          !loading && searchQuery && profiles.length === 0 ? (
-            <View className="items-center mt-10">
-              <Text className="text-gray-400 text-center">No musicians found matching "{searchQuery}"</Text>
-            </View>
-          ) : null
-        }
-      />
+      {searchQuery.trim() === '' && activeFilters.length === 0 ? (
+        <View>
+          <View className="flex-row justify-between items-center mb-2">
+            <Text className="text-lg font-bold text-gray-500 dark:text-gray-400">Recent Searches</Text>
+            {recentSearches.length > 0 && (
+              <TouchableOpacity onPress={() => setRecentSearches([])}>
+                <Text className="text-red-500">Clear</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          {recentSearches.length > 0 ? (
+            recentSearches.map((item, index) => (
+              <TouchableOpacity key={index} onPress={() => {
+                setSearchQuery(item);
+                performSearch(item, activeFilters);
+              }} className="flex-row items-center py-3 border-b border-gray-100 dark:border-neutral-800">
+                <Clock size={16} color="#9ca3af" />
+                <Text className="text-gray-700 dark:text-gray-300 text-base ml-3">{item}</Text>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <Text className="text-gray-400 dark:text-gray-500 mt-2">Your recent searches will appear here.</Text>
+          )}
+        </View>
+      ) : (
+        <FlatList
+          data={profiles}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={{ paddingBottom: 100 }}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            !loading ? (
+              <View className="items-center mt-10">
+                <Text className="text-gray-400 text-center">No musicians found matching your criteria.</Text>
+              </View>
+            ) : null
+          }
+        />
+      )}
 
       {/* Filter Modal */}
       <Modal
@@ -163,9 +203,19 @@ export default function SearchScreen() {
           <View className="bg-white dark:bg-neutral-900 rounded-t-3xl p-6 h-3/4">
             <View className="flex-row justify-between items-center mb-6">
               <Text className="text-xl font-bold text-gray-900 dark:text-white">Filter by Skills</Text>
-              <TouchableOpacity onPress={() => setIsFilterVisible(false)}>
-                <X size={24} color={colorScheme === 'dark' ? 'white' : 'black'} />
-              </TouchableOpacity>
+              <View className="flex-row items-center gap-4">
+                {activeFilters.length > 0 && (
+                  <TouchableOpacity onPress={() => {
+                    setActiveFilters([]);
+                    performSearch(searchQuery, []);
+                  }}>
+                    <Text className="text-red-500 font-medium text-base">Clear All</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity onPress={() => setIsFilterVisible(false)}>
+                  <X size={24} color={colorScheme === 'dark' ? 'white' : 'black'} />
+                </TouchableOpacity>
+              </View>
             </View>
 
             <View className="flex-row items-center bg-gray-50 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl px-3 h-12 mb-4">
