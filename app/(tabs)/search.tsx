@@ -1,8 +1,8 @@
 import { Stack, useRouter } from 'expo-router';
-import { ArrowRight, Search as SearchIcon } from 'lucide-react-native';
+import { ArrowRight, Filter, Plus, Search as SearchIcon, X } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Image, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Image, Modal, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../../lib/supabase';
 
 export default function SearchScreen() {
@@ -11,14 +11,31 @@ export default function SearchScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [profiles, setProfiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
+  const [tempSkill, setTempSkill] = useState('');
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
 
   const handleSearch = async () => {
+    performSearch(searchQuery, activeFilters);
+  };
+
+  const performSearch = async (queryText: string, filters: string[]) => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
+      let query = supabase
         .from('profiles')
-        .select('*')
-        .or(`full_name.ilike.%${searchQuery}%,username.ilike.%${searchQuery}%,skills.ilike.%${searchQuery}%,looking_for.ilike.%${searchQuery}%`);
+        .select('*');
+
+      if (queryText) {
+        query = query.or(`full_name.ilike.%${queryText}%,username.ilike.%${queryText}%,skills.ilike.%${queryText}%,looking_for.ilike.%${queryText}%`);
+      }
+
+      filters.forEach(skill => {
+        query = query.ilike('skills', `%${skill}%`);
+      });
+
+      const { data, error } = await query;
+
       if (error) {
         throw error;
       }
@@ -30,6 +47,20 @@ export default function SearchScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const addFilter = () => {
+    if (tempSkill.trim() && !activeFilters.includes(tempSkill.trim())) {
+      setActiveFilters([...activeFilters, tempSkill.trim()]);
+      setTempSkill('');
+    }
+  };
+
+  const removeFilter = (skill: string) => {
+    const newFilters = activeFilters.filter(s => s !== skill);
+    setActiveFilters(newFilters);
+    // Optional: Trigger search immediately when removing a filter from the main screen
+    performSearch(searchQuery, newFilters);
   };
 
   const renderItem = ({ item }: { item: any }) => (
@@ -85,7 +116,26 @@ export default function SearchScreen() {
         >
           {loading ? <ActivityIndicator color={colorScheme === 'dark' ? 'black' : 'white'} /> : <ArrowRight size={24} color={colorScheme === 'dark' ? 'black' : 'white'} />}
         </TouchableOpacity>
+
+        <TouchableOpacity
+          className="bg-gray-100 dark:bg-neutral-800 h-14 w-14 rounded-2xl items-center justify-center shadow-sm active:scale-95"
+          onPress={() => setIsFilterVisible(true)}
+        >
+          <Filter size={24} color={colorScheme === 'dark' ? 'white' : 'black'} />
+        </TouchableOpacity>
       </View>
+
+      {/* Active Filters Chips */}
+      {activeFilters.length > 0 && (
+        <View className="flex-row flex-wrap gap-2 mb-4">
+          {activeFilters.map((skill, index) => (
+            <TouchableOpacity key={index} onPress={() => removeFilter(skill)} className="bg-black dark:bg-white px-3 py-1.5 rounded-full flex-row items-center">
+              <Text className="text-white dark:text-black text-xs font-medium mr-1">{skill}</Text>
+              <X size={12} color={colorScheme === 'dark' ? 'black' : 'white'} />
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
 
       <FlatList
         data={profiles}
@@ -101,6 +151,58 @@ export default function SearchScreen() {
           ) : null
         }
       />
+
+      {/* Filter Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={isFilterVisible}
+        onRequestClose={() => setIsFilterVisible(false)}
+      >
+        <View className="flex-1 justify-end bg-black/50">
+          <View className="bg-white dark:bg-neutral-900 rounded-t-3xl p-6 h-3/4">
+            <View className="flex-row justify-between items-center mb-6">
+              <Text className="text-xl font-bold text-gray-900 dark:text-white">Filter by Skills</Text>
+              <TouchableOpacity onPress={() => setIsFilterVisible(false)}>
+                <X size={24} color={colorScheme === 'dark' ? 'white' : 'black'} />
+              </TouchableOpacity>
+            </View>
+
+            <View className="flex-row items-center bg-gray-50 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl px-3 h-12 mb-4">
+              <TextInput
+                className="flex-1 text-gray-900 dark:text-white"
+                placeholder="Add instrument (e.g. Bass)"
+                placeholderTextColor="#9ca3af"
+                value={tempSkill}
+                onChangeText={setTempSkill}
+                onSubmitEditing={addFilter}
+              />
+              <TouchableOpacity onPress={addFilter}>
+                <Plus size={24} color={colorScheme === 'dark' ? 'white' : 'black'} />
+              </TouchableOpacity>
+            </View>
+
+            <View className="flex-row flex-wrap gap-2 mb-6">
+              {activeFilters.map((skill, index) => (
+                <TouchableOpacity key={index} onPress={() => removeFilter(skill)} className="bg-gray-100 dark:bg-neutral-800 px-3 py-2 rounded-full flex-row items-center">
+                  <Text className="text-gray-900 dark:text-white font-medium mr-2">{skill}</Text>
+                  <X size={14} color={colorScheme === 'dark' ? 'white' : 'black'} />
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              className="bg-black dark:bg-white h-14 rounded-xl items-center justify-center mt-auto mb-4"
+              onPress={() => {
+                setIsFilterVisible(false);
+                handleSearch();
+              }}
+            >
+              <Text className="text-white dark:text-black font-bold text-lg">Apply Filters</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
