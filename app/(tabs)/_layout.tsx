@@ -1,7 +1,7 @@
 import { Link, Tabs } from 'expo-router';
 import { SymbolView } from 'expo-symbols';
 import React from 'react';
-import { Pressable } from 'react-native';
+import { Platform, Pressable } from 'react-native';
 
 import { useClientOnlyValue } from '@/components/useClientOnlyValue';
 import Colors from '@/constants/Colors';
@@ -84,6 +84,25 @@ export default function TabLayout() {
                 ios: 'magnifyingglass',
                 android: 'search',
                 web: 'search',
+              }}
+              tintColor={color}
+              size={28}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="map"
+        options={{
+          // This prevents the tab from showing up on web
+          href: Platform.OS === 'web' ? null : '/map',
+          title: 'Near Jams',
+          tabBarIcon: ({ color }) => (
+            <SymbolView
+              name={{
+                ios: 'map',
+                android: 'map',
+                web: 'map',
               }}
               tintColor={color}
               size={28}
