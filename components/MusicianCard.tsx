@@ -1,7 +1,7 @@
-import { Audio } from 'expo-av';
+import { useAudioPlayer } from 'expo-audio';
 import { Pause, Play } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 export interface MusicianProfile {
@@ -16,34 +16,23 @@ export interface MusicianProfile {
 
 export default function MusicianCard({ profile }: { profile: MusicianProfile }) {
     const { colorScheme } = useColorScheme();
-    const [sound, setSound] = useState<Audio.Sound>();
-    const [isPlaying, setIsPlaying] = useState(false);
 
-    async function playSound() {
+    const player = useAudioPlayer(profile.intro_audio_url || '');
+
+    const playSound = () => {
         if (!profile.intro_audio_url) return;
-        if (isPlaying) {
-            await sound?.stopAsync();
-            setIsPlaying(false);
-            return;
+        if (player.playing) {
+            player.pause();
+        } else {
+            player.play();
         }
-
-        const { sound: newSound } = await Audio.Sound.createAsync(
-            { uri: profile.intro_audio_url },
-            { shouldPlay: true }
-        );
-        setSound(newSound);
-        setIsPlaying(true);
-
-        newSound.setOnPlaybackStatusUpdate((status) => {
-            if (status.isLoaded && status.didJustFinish) {
-                setIsPlaying(false);
-            }
-        });
-    }
+    };
 
     useEffect(() => {
-        return () => { sound?.unloadAsync(); };
-    }, [sound]);
+        return () => {
+            // Cleanup if needed, though useAudioPlayer handles most lifecycle
+        };
+    }, []);
 
     return (
         <View className="bg-white dark:bg-neutral-900 p-4 rounded-[32px] border border-neutral-200 dark:border-neutral-800 items-center w-full max-w-[280px] shadow-sm m-2">
@@ -82,11 +71,11 @@ export default function MusicianCard({ profile }: { profile: MusicianProfile }) 
                 <TouchableOpacity
                     onPress={playSound}
                     activeOpacity={0.7}
-                    className={`w-full flex-row items-center justify-center py-4 rounded-2xl mb-6 ${isPlaying ? 'bg-emerald-500' : 'bg-neutral-900 dark:bg-neutral-200'}`}
+                    className={`w-full flex-row items-center justify-center py-4 rounded-2xl mb-6 ${player.playing ? 'bg-emerald-500' : 'bg-neutral-900 dark:bg-neutral-200'}`}
                 >
-                    {isPlaying ? <Pause size={20} color="white" /> : <Play size={20} color={colorScheme === 'dark' ? 'black' : 'white'} fill={colorScheme === 'dark' ? 'black' : 'white'} />}
-                    <Text className={`font-bold ml-2 tracking-widest uppercase text-xs ${isPlaying ? 'text-white' : 'text-white dark:text-black'}`}>
-                        {isPlaying ? 'Playing...' : 'Audio Intro'}
+                    {player.playing ? <Pause size={20} color="white" /> : <Play size={20} color={colorScheme === 'dark' ? 'black' : 'white'} fill={colorScheme === 'dark' ? 'black' : 'white'} />}
+                    <Text className={`font-bold ml-2 tracking-widest uppercase text-xs ${player.playing ? 'text-white' : 'text-white dark:text-black'}`}>
+                        {player.playing ? 'Playing...' : 'Audio Intro'}
                     </Text>
                 </TouchableOpacity>
             )}

@@ -1,4 +1,4 @@
-import { Audio } from 'expo-av';
+import { useAudioPlayer } from 'expo-audio';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { ArrowLeft, Briefcase, MapPin, MicVocal, Pause, Play } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
@@ -24,14 +24,11 @@ export default function UserProfileScreen() {
     const { colorScheme } = useColorScheme();
     const [profile, setProfile] = useState<MusicianProfile | null>(null);
     const [loading, setLoading] = useState(true);
-    const [sound, setSound] = useState<Audio.Sound>();
-    const [isPlaying, setIsPlaying] = useState(false);
+
+    const player = useAudioPlayer(profile?.intro_audio_url || '');
 
     useEffect(() => {
         fetchProfile();
-        return () => {
-            sound?.unloadAsync();
-        };
     }, [id]);
 
     async function fetchProfile() {
@@ -55,28 +52,14 @@ export default function UserProfileScreen() {
         }
     }
 
-    async function playSound() {
+    const playSound = () => {
         if (!profile?.intro_audio_url) return;
-
-        if (isPlaying) {
-            await sound?.stopAsync();
-            setIsPlaying(false);
-            return;
+        if (player.playing) {
+            player.pause();
+        } else {
+            player.play();
         }
-
-        const { sound: newSound } = await Audio.Sound.createAsync(
-            { uri: profile.intro_audio_url },
-            { shouldPlay: true }
-        );
-        setSound(newSound);
-        setIsPlaying(true);
-
-        newSound.setOnPlaybackStatusUpdate((status) => {
-            if (status.isLoaded && status.didJustFinish) {
-                setIsPlaying(false);
-            }
-        });
-    }
+    };
 
     if (loading) {
         return (
@@ -146,11 +129,11 @@ export default function UserProfileScreen() {
                 {!!profile.intro_audio_url && (
                     <TouchableOpacity
                         onPress={playSound}
-                        className={`flex-row items-center justify-center py-4 rounded-2xl shadow-sm ${isPlaying ? 'bg-emerald-500' : 'bg-black dark:bg-white'}`}
+                        className={`flex-row items-center justify-center py-4 rounded-2xl shadow-sm ${player.playing ? 'bg-emerald-500' : 'bg-black dark:bg-white'}`}
                     >
-                        {isPlaying ? <Pause size={20} color="white" /> : <Play size={20} color={colorScheme === 'dark' ? 'black' : 'white'} fill={colorScheme === 'dark' ? 'black' : 'white'} />}
-                        <Text className={`font-bold ml-2 text-base ${isPlaying ? 'text-white' : 'text-white dark:text-black'}`}>
-                            {isPlaying ? 'Playing Intro...' : 'Play Audio Intro'}
+                        {player.playing ? <Pause size={20} color="white" /> : <Play size={20} color={colorScheme === 'dark' ? 'black' : 'white'} fill={colorScheme === 'dark' ? 'black' : 'white'} />}
+                        <Text className={`font-bold ml-2 text-base ${player.playing ? 'text-white' : 'text-white dark:text-black'}`}>
+                            {player.playing ? 'Playing Intro...' : 'Play Audio Intro'}
                         </Text>
                     </TouchableOpacity>
                 )}

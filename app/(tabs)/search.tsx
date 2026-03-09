@@ -124,7 +124,7 @@ export default function SearchScreen() {
           )}
         </View>
         <TouchableOpacity
-          className="bg-black dark:bg-white h-14 w-14 rounded-2xl items-center justify-center shadow-md active:scale-95"
+          className="bg-black dark:bg-white h-14 w-14 rounded-2xl items-center justify-center shadow-md"
           onPress={handleSearch}
           disabled={loading}
         >
@@ -132,7 +132,7 @@ export default function SearchScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          className="bg-gray-100 dark:bg-neutral-800 h-14 w-14 rounded-2xl items-center justify-center shadow-sm active:scale-95"
+          className="bg-gray-100 dark:bg-neutral-800 h-14 w-14 rounded-2xl items-center justify-center shadow-sm"
           onPress={() => setIsFilterVisible(true)}
         >
           <Filter size={24} color={colorScheme === 'dark' ? 'white' : 'black'} />

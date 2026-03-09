@@ -1,7 +1,8 @@
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import { Stack, useRouter } from 'expo-router';
-import { AlignLeft, ArrowLeft, Camera, Globe, MapPin, Mic, Music, Plus, Trash2, User, X } from 'lucide-react-native';
+import { AlignLeft, ArrowLeft, Camera, Globe, Locate, MapPin, Mic, Music, Plus, Trash2, User, X } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
@@ -27,11 +28,23 @@ export default function EditProfileScreen() {
     const { session } = useSession();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [gettingLocation, setGettingLocation] = useState(false);
     const [image, setImage] = useState<string | null>(null);
     const [audioUri, setAudioUri] = useState<string | null>(null);
     const [customSkill, setCustomSkill] = useState('');
 
-    const [formData, setFormData] = useState({
+    const [formData, setFormData] = useState<{
+        username: string;
+        full_name: string;
+        website: string;
+        location: string;
+        intro_audio_url: string;
+        avatar_url: string;
+        skills: string;
+        looking_for: string;
+        latitude?: number | null;
+        longitude?: number | null;
+    }>({
         username: '',
         full_name: '',
         website: '',
@@ -40,6 +53,8 @@ export default function EditProfileScreen() {
         avatar_url: '',
         skills: '',
         looking_for: '',
+        latitude: null,
+        longitude: null,
     });
 
     useEffect(() => {
@@ -53,7 +68,7 @@ export default function EditProfileScreen() {
 
             const { data, error, status } = await supabase
                 .from('profiles')
-                .select(`username, full_name, website, location, avatar_url, intro_audio_url, skills, looking_for`)
+                .select(`username, full_name, website, location, avatar_url, intro_audio_url, skills, looking_for, latitude, longitude`)
                 .eq('id', session?.user.id)
                 .single();
 
@@ -71,6 +86,8 @@ export default function EditProfileScreen() {
                     intro_audio_url: data.intro_audio_url || '',
                     skills: data.skills || '',
                     looking_for: data.looking_for || '',
+                    latitude: data.latitude || null,
+                    longitude: data.longitude || null,
                 });
             }
         } catch (error) {
@@ -153,6 +170,21 @@ export default function EditProfileScreen() {
 
             let avatarUrl = formData.avatar_url;
             let introAudioUrl = formData.intro_audio_url;
+            let latitude = formData.latitude;
+            let longitude = formData.longitude;
+
+            // If location text is present but coords are missing (e.g. manual entry), try to geocode
+            if (formData.location && (latitude === null || longitude === null)) {
+                try {
+                    const geocoded = await Location.geocodeAsync(formData.location);
+                    if (geocoded.length > 0) {
+                        latitude = geocoded[0].latitude;
+                        longitude = geocoded[0].longitude;
+                    }
+                } catch (e) {
+                    console.log("Geocoding failed:", e);
+                }
+            }
 
             if (image) {
                 avatarUrl = await uploadAvatar(session.user.id, image);
@@ -167,6 +199,8 @@ export default function EditProfileScreen() {
                 ...formData,
                 avatar_url: avatarUrl,
                 intro_audio_url: introAudioUrl,
+                latitude,
+                longitude,
                 updated_at: new Date(),
             };
 
@@ -207,6 +241,51 @@ export default function EditProfileScreen() {
         if (customSkill.trim()) {
             addSkill(customSkill.trim());
             setCustomSkill('');
+        }
+    };
+
+    const handleGetCurrentLocation = async () => {
+        try {
+            setGettingLocation(true);
+            const { status } = await Location.requestForegroundPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('Permission denied', 'Permission to access location was denied');
+                return;
+            }
+
+            const location = await Location.getCurrentPositionAsync({});
+            console.log('Edit Profile - Current Location:', location);
+
+            let locationString = formData.location;
+
+            try {
+                const reverseGeocode = await Location.reverseGeocodeAsync({
+                    latitude: location.coords.latitude,
+                    longitude: location.coords.longitude
+                });
+
+                if (reverseGeocode.length > 0) {
+                    console.log('Reverse Geocode Result:', reverseGeocode[0]);
+                    const address = reverseGeocode[0];
+                    const parts = [address.city, address.region || address.country].filter(Boolean);
+                    locationString = parts.join(', ');
+                }
+            } catch (e) {
+                console.log("Reverse geocoding failed (using coords only):", e);
+            }
+
+            setFormData(prev => ({
+                ...prev,
+                location: locationString,
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude,
+            }));
+        } catch (error) {
+            if (error instanceof Error) {
+                Alert.alert('Error', error.message);
+            }
+        } finally {
+            setGettingLocation(false);
         }
     };
 
@@ -321,7 +400,15 @@ export default function EditProfileScreen() {
                                             placeholder="San Francisco, CA"
                                             placeholderTextColor="#9ca3af"
                                         />
+                                        <TouchableOpacity onPress={handleGetCurrentLocation} disabled={gettingLocation}>
+                                            {gettingLocation ?
+                                                <ActivityIndicator size="small" color={colorScheme === 'dark' ? 'white' : 'black'} /> :
+                                                <Locate size={20} color={colorScheme === 'dark' ? 'white' : '#6b7280'} />}
+                                        </TouchableOpacity>
                                     </View>
+                                    <Text className="text-xs text-gray-400 dark:text-gray-500 mt-1 ml-1">
+                                        {formData.latitude !== null && formData.latitude !== undefined && formData.longitude !== null && formData.longitude !== undefined ? `Lat: ${formData.latitude.toFixed(5)}, Long: ${formData.longitude.toFixed(5)}` : ''}
+                                    </Text>
                                 </View>
                             </View>
                         </View>
@@ -424,7 +511,7 @@ export default function EditProfileScreen() {
 
                         {/* Save Button */}
                         <TouchableOpacity
-                            className="bg-black dark:bg-white h-14 rounded-xl flex-row items-center justify-center shadow-md active:scale-95 mb-10"
+                            className="bg-black dark:bg-white h-14 rounded-xl flex-row items-center justify-center shadow-md mb-10"
                             onPress={updateProfile}
                             disabled={saving}
                         >

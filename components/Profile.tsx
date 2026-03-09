@@ -155,8 +155,18 @@ export default function Profile({ session }: { session: Session }) {
         <View className="mt-4 space-y-3">
           <TouchableOpacity
             className="bg-white dark:bg-neutral-900 flex-row justify-center items-center py-4 rounded-xl border border-gray-200 dark:border-neutral-800 active:bg-gray-50 dark:active:bg-neutral-800"
-            onPress={toggleColorScheme}
-            onLongPress={() => setColorScheme('system')}
+            onPress={() => {
+              try {
+                toggleColorScheme();
+              } catch (e) {
+                Alert.alert("Configuration Error", "Please set darkMode: 'class' in tailwind.config.js to enable manual theme toggling.");
+              }
+            }}
+            onLongPress={() => {
+              try {
+                setColorScheme('system');
+              } catch (e) { }
+            }}
           >
             {colorScheme === 'dark' ? <Moon size={20} color="white" /> : <Sun size={20} color="black" />}
             <Text className="text-gray-900 dark:text-white font-bold text-base ml-2">Theme: {colorScheme === 'dark' ? 'Dark' : 'Light'}</Text>
