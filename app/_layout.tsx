@@ -91,7 +91,11 @@ function RootLayoutNav() {
         localStorage.removeItem('nativewind-color-theme');
       } catch { }
     }
-    setColorScheme('system');
+    try {
+      setColorScheme('system');
+    } catch (e) {
+      // Ignore error if darkMode is not 'class' in tailwind.config.js
+    }
   }, []);
 
   useEffect(() => {

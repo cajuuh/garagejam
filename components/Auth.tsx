@@ -39,7 +39,7 @@ export default function Auth() {
     <View className="flex-1 bg-white dark:bg-black justify-center px-8">
       {/* Header Section */}
       <View className="items-center mb-12">
-        <View className="w-20 h-20 bg-black dark:bg-white rounded-3xl items-center justify-center mb-6 shadow-xl shadow-gray-300 dark:shadow-none rotate-3">
+        <View className="w-20 h-20 bg-black dark:bg-white rounded-3xl items-center justify-center mb-6 shadow-xl shadow-gray-300 dark:shadow-none">
           <Music2 size={40} color={colorScheme === 'dark' ? 'black' : 'white'} />
         </View>
         <Text className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">GarageJam</Text>
@@ -85,7 +85,7 @@ export default function Auth() {
       {/* Actions */}
       <View className="mt-10 space-y-4">
         <TouchableOpacity
-          className="bg-black dark:bg-white h-16 rounded-2xl flex-row items-center justify-center shadow-lg shadow-gray-400 active:scale-95 transition-transform"
+          className="bg-black dark:bg-white h-16 rounded-2xl flex-row items-center justify-center shadow-lg shadow-gray-400"
           onPress={() => signInWithEmail()}
           disabled={loading}
         >

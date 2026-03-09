@@ -218,7 +218,7 @@ export default function SignUpScreen() {
 
                     {/* Submit Button */}
                     <TouchableOpacity
-                        className="bg-black dark:bg-white h-16 rounded-2xl flex-row items-center justify-center shadow-lg shadow-gray-400 active:scale-95 mb-10"
+                        className="bg-black dark:bg-white h-16 rounded-2xl flex-row items-center justify-center shadow-lg shadow-gray-400 mb-10"
                         onPress={handleSignUp}
                         disabled={loading}
                     >

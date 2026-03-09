@@ -91,6 +91,23 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="map"
+        options={{
+          title: 'Near Jams',
+          tabBarIcon: ({ color }) => (
+            <SymbolView
+              name={{
+                ios: 'map',
+                android: 'map',
+                web: 'map',
+              }}
+              tintColor={color}
+              size={28}
+            />
+          ),
+        }}
+      />
     </Tabs>
   );
 }
