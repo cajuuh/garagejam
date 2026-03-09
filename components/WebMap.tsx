@@ -25,10 +25,11 @@ export default function WebMap({ location, profiles, session }: WebMapProps) {
     const { colorScheme } = useColorScheme();
     const router = useRouter();
 
-    const createCustomIcon = (avatarUrl: string) => {
+    const createCustomIcon = (avatarUrl: string, isCurrentUser: boolean) => {
+        const borderColor = isCurrentUser ? '#3b82f6' : '#10b981'; // blue-500 : emerald-500
         return L.divIcon({
             className: 'custom-icon',
-            html: `<div style="background-color: ${colorScheme === 'dark' ? '#262626' : 'white'}; padding: 2px; border-radius: 50%; border: 2px solid #10b981; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+            html: `<div style="background-color: ${colorScheme === 'dark' ? '#262626' : 'white'}; padding: 2px; border-radius: 50%; border: 2px solid ${borderColor}; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                      <img src="${avatarUrl || 'https://via.placeholder.com/40'}" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;" />
                    </div>`,
             iconSize: [40, 40],
@@ -54,7 +55,7 @@ export default function WebMap({ location, profiles, session }: WebMapProps) {
                     <Marker
                         key={profile.id}
                         position={[profile.latitude, profile.longitude] as [number, number]}
-                        icon={createCustomIcon(profile.avatar_url)}
+                        icon={createCustomIcon(profile.avatar_url, profile.id === session?.user.id)}
                     >
                         <Popup>
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '150px' }}>

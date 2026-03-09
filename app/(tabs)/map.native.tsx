@@ -43,9 +43,13 @@ export default function MapScreen() {
 
             // 3. Update User's Location in DB
             if (session?.user) {
+                // Fuzz location for privacy (approx +/- 500m) to avoid legal issues with precise tracking
+                const fuzzedLatitude = currentLocation.coords.latitude + (Math.random() - 0.5) * 0.01;
+                const fuzzedLongitude = currentLocation.coords.longitude + (Math.random() - 0.5) * 0.01;
+
                 const { error } = await supabase.from('profiles').update({
-                    latitude: currentLocation.coords.latitude,
-                    longitude: currentLocation.coords.longitude,
+                    latitude: fuzzedLatitude,
+                    longitude: fuzzedLongitude,
                 }).eq('id', session.user.id);
 
                 if (error) console.error('Error updating location:', error);
@@ -111,7 +115,7 @@ export default function MapScreen() {
                             longitude: profile.longitude,
                         }}
                     >
-                        <MapPin avatarUrl={profile.avatar_url} />
+                        <MapPin avatarUrl={profile.avatar_url} isCurrentUser={profile.id === session?.user.id} />
 
                         <Callout tooltip onPress={() => router.push({ pathname: '/user/[id]' as any, params: { id: profile.id } })}>
                             <View className="bg-white dark:bg-neutral-900 p-3 rounded-xl border border-gray-200 dark:border-neutral-700 w-48 items-center mb-2">

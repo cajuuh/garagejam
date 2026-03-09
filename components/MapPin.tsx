@@ -1,9 +1,9 @@
 import { Image, View } from 'react-native';
 
-export default function MapPin({ avatarUrl }: { avatarUrl?: string }) {
+export default function MapPin({ avatarUrl, isCurrentUser }: { avatarUrl?: string; isCurrentUser?: boolean }) {
     return (
         <View className="items-center">
-            <View className="bg-white dark:bg-neutral-800 p-1 rounded-full border-2 border-emerald-500 shadow-sm">
+            <View className={`bg-white dark:bg-neutral-800 p-1 rounded-full border-2 ${isCurrentUser ? 'border-blue-500' : 'border-emerald-500'} shadow-sm`}>
                 <Image
                     source={
                         avatarUrl
@@ -15,7 +15,7 @@ export default function MapPin({ avatarUrl }: { avatarUrl?: string }) {
                     resizeMode="cover"
                 />
             </View>
-            <View className="bg-emerald-500 w-1 h-3 rounded-full mt-[-2px]" />
+            <View className={`${isCurrentUser ? 'bg-blue-500' : 'bg-emerald-500'} w-1 h-3 rounded-full mt-[-2px]`} />
         </View>
     );
 }

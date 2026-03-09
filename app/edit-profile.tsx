@@ -178,8 +178,9 @@ export default function EditProfileScreen() {
                 try {
                     const geocoded = await Location.geocodeAsync(formData.location);
                     if (geocoded.length > 0) {
-                        latitude = geocoded[0].latitude;
-                        longitude = geocoded[0].longitude;
+                        // Fuzz the geocoded result as well
+                        latitude = geocoded[0].latitude + (Math.random() - 0.5) * 0.01;
+                        longitude = geocoded[0].longitude + (Math.random() - 0.5) * 0.01;
                     }
                 } catch (e) {
                     console.log("Geocoding failed:", e);
@@ -221,7 +222,14 @@ export default function EditProfileScreen() {
     }
 
     const handleChange = (key: string, value: string) => {
-        setFormData(prev => ({ ...prev, [key]: value }));
+        setFormData(prev => {
+            const updates: any = { [key]: value };
+            if (key === 'location') {
+                updates.latitude = null;
+                updates.longitude = null;
+            }
+            return { ...prev, ...updates };
+        });
     };
 
     const currentSkills = formData.skills ? formData.skills.split(',').map(s => s.trim()).filter(Boolean) : [];
@@ -256,6 +264,10 @@ export default function EditProfileScreen() {
             const location = await Location.getCurrentPositionAsync({});
             console.log('Edit Profile - Current Location:', location);
 
+            // Fuzz immediately for privacy
+            const fuzzedLat = location.coords.latitude + (Math.random() - 0.5) * 0.01;
+            const fuzzedLong = location.coords.longitude + (Math.random() - 0.5) * 0.01;
+
             let locationString = formData.location;
 
             try {
@@ -277,8 +289,8 @@ export default function EditProfileScreen() {
             setFormData(prev => ({
                 ...prev,
                 location: locationString,
-                latitude: location.coords.latitude,
-                longitude: location.coords.longitude,
+                latitude: fuzzedLat,
+                longitude: fuzzedLong,
             }));
         } catch (error) {
             if (error instanceof Error) {

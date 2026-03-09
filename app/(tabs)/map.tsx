@@ -43,9 +43,13 @@ export default function MapScreen() {
 
             // 3. Update User's Location in DB
             if (session?.user) {
+                // Fuzz location for privacy (approx +/- 500m)
+                const fuzzedLatitude = currentLocation.coords.latitude + (Math.random() - 0.5) * 0.01;
+                const fuzzedLongitude = currentLocation.coords.longitude + (Math.random() - 0.5) * 0.01;
+
                 await supabase.from('profiles').update({
-                    latitude: currentLocation.coords.latitude,
-                    longitude: currentLocation.coords.longitude,
+                    latitude: fuzzedLatitude,
+                    longitude: fuzzedLongitude,
                 }).eq('id', session.user.id);
             }
 
