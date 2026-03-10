@@ -1,6 +1,6 @@
 import { Session } from '@supabase/supabase-js';
 import { Stack, useRouter } from 'expo-router';
-import { Briefcase, Edit3, LogOut, MapPin, MicVocal, Moon, Music, Sun } from 'lucide-react-native';
+import { Briefcase, Check, Edit3, LogOut, MapPin, MicVocal, Moon, Music, Sun, UserPlus, Users, X } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, ImageBackground, ScrollView, Text, TouchableOpacity, View } from 'react-native';
@@ -16,14 +16,37 @@ type MusicianProfile = {
   website: string;
 };
 
+type ConnectionRequest = {
+  id: string;
+  requester: {
+    id: string;
+    full_name: string;
+    username: string;
+    avatar_url: string;
+  };
+};
+
+type FriendProfile = {
+  id: string;
+  full_name: string;
+  username: string;
+  avatar_url: string;
+};
+
 export default function Profile({ session }: { session: Session }) {
   const { colorScheme, toggleColorScheme, setColorScheme } = useColorScheme();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<MusicianProfile | null>(null);
+  const [requests, setRequests] = useState<ConnectionRequest[]>([]);
+  const [friends, setFriends] = useState<FriendProfile[]>([]);
 
   useEffect(() => {
-    if (session) getProfile();
+    if (session) {
+      getProfile();
+      fetchRequests();
+      fetchFriends();
+    }
   }, [session]);
 
   async function getProfile() {
@@ -49,6 +72,50 @@ export default function Profile({ session }: { session: Session }) {
       }
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function fetchRequests() {
+    if (!session?.user) return;
+    const { data, error } = await supabase
+      .from('connections')
+      .select('id, requester:profiles!requester_id(id, full_name, username, avatar_url)')
+      .eq('receiver_id', session.user.id)
+      .eq('status', 'pending');
+
+    if (!error && data) {
+      // @ts-ignore - Supabase types for joined tables can be tricky, casting for simplicity
+      setRequests(data);
+    }
+  }
+
+  async function handleRequest(id: string, status: 'accepted' | 'rejected') {
+    try {
+      const { error } = await supabase
+        .from('connections')
+        .update({ status })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      // Remove from list
+      setRequests(prev => prev.filter(req => req.id !== id));
+
+      if (status === 'accepted') Alert.alert('Connected!', 'You are now connected.');
+    } catch (error) {
+      if (error instanceof Error) Alert.alert('Error', error.message);
+    }
+  }
+
+  async function fetchFriends() {
+    if (!session?.user) return;
+    const { data, error } = await supabase.rpc('get_friends');
+
+    if (error) {
+      // This might fail if the RPC function hasn't been created yet.
+      console.error("Could not fetch friends, maybe RPC 'get_friends' is missing?", error);
+    } else if (data) {
+      setFriends(data);
     }
   }
 
@@ -116,6 +183,74 @@ export default function Profile({ session }: { session: Session }) {
 
       {/* Content Cards */}
       <View className="px-4 pb-10 space-y-4">
+
+        {/* Connection Requests */}
+        {requests.length > 0 && (
+          <View className="bg-white dark:bg-neutral-900 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-neutral-800">
+            <View className="flex-row items-center mb-3 border-b border-gray-50 dark:border-neutral-800 pb-3">
+              <View className="bg-orange-50 dark:bg-orange-950 p-2 rounded-lg">
+                <UserPlus size={20} color="#f97316" />
+              </View>
+              <Text className="text-lg font-bold text-gray-900 dark:text-white ml-3">Connection Requests</Text>
+            </View>
+
+            {requests.map((req) => (
+              <View key={req.id} className="flex-row items-center justify-between mb-3 last:mb-0">
+                <TouchableOpacity
+                  className="flex-row items-center flex-1"
+                  onPress={() => router.push(`/user/${req.requester.id}`)}
+                >
+                  <Image
+                    source={req.requester.avatar_url ? { uri: req.requester.avatar_url } : require('../assets/images/default-avatar.png')}
+                    className="w-10 h-10 rounded-full bg-gray-200"
+                  />
+                  <View className="ml-3">
+                    <Text className="font-bold text-gray-900 dark:text-white">{req.requester.full_name || req.requester.username}</Text>
+                    <Text className="text-xs text-gray-500">@{req.requester.username}</Text>
+                  </View>
+                </TouchableOpacity>
+                <View className="flex-row gap-2">
+                  <TouchableOpacity onPress={() => handleRequest(req.id, 'accepted')} className="bg-black dark:bg-white p-2 rounded-full">
+                    <Check size={16} color={colorScheme === 'dark' ? 'black' : 'white'} />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => handleRequest(req.id, 'rejected')} className="bg-gray-100 dark:bg-neutral-800 p-2 rounded-full">
+                    <X size={16} color={colorScheme === 'dark' ? 'white' : 'black'} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+
+        {/* Friends List */}
+        {friends.length > 0 && (
+          <View className="bg-white dark:bg-neutral-900 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-neutral-800">
+            <View className="flex-row items-center mb-3 border-b border-gray-50 dark:border-neutral-800 pb-3">
+              <View className="bg-green-50 dark:bg-green-950 p-2 rounded-lg">
+                <Users size={20} color="#22c55e" />
+              </View>
+              <Text className="text-lg font-bold text-gray-900 dark:text-white ml-3">Jam Bros ({friends.length})</Text>
+            </View>
+
+            <View className="flex-row flex-wrap -mx-2">
+              {friends.map((friend) => (
+                <TouchableOpacity
+                  key={friend.id}
+                  className="items-center w-1/4 p-2"
+                  onPress={() => router.push(`/user/${friend.id}`)}
+                >
+                  <Image
+                    source={friend.avatar_url ? { uri: friend.avatar_url } : require('../assets/images/default-avatar.png')}
+                    className="w-16 h-16 rounded-full bg-gray-200"
+                  />
+                  <Text className="text-xs font-bold text-gray-900 dark:text-white mt-1 text-center" numberOfLines={1}>
+                    {friend.full_name || friend.username}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
 
         {/* Skills Card */}
         <View className="bg-white dark:bg-neutral-900 p-5 rounded-2xl shadow-sm border border-gray-100 dark:border-neutral-800">
