@@ -1,8 +1,9 @@
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
+import { Locate } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import React, { Suspense, useEffect, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { useSession } from '../../hooks/useSession';
 import { supabase } from '../../lib/supabase';
 
@@ -37,21 +38,41 @@ export default function MapScreen() {
                 return;
             }
 
-            // 2. Get Current Location
-            let currentLocation = await Location.getCurrentPositionAsync({});
-            setLocation(currentLocation);
+            let mapLocation: Location.LocationObject | null = null;
 
-            // 3. Update User's Location in DB
+            // 2. Try to get stored location from DB first
             if (session?.user) {
-                // Fuzz location for privacy (approx +/- 500m)
-                const fuzzedLatitude = currentLocation.coords.latitude + (Math.random() - 0.5) * 0.01;
-                const fuzzedLongitude = currentLocation.coords.longitude + (Math.random() - 0.5) * 0.01;
+                const { data } = await supabase
+                    .from('profiles')
+                    .select('latitude, longitude')
+                    .eq('id', session.user.id)
+                    .single();
 
-                await supabase.from('profiles').update({
-                    latitude: fuzzedLatitude,
-                    longitude: fuzzedLongitude,
-                }).eq('id', session.user.id);
+                if (data?.latitude && data?.longitude) {
+                    mapLocation = {
+                        coords: { latitude: data.latitude, longitude: data.longitude, altitude: null, accuracy: null, altitudeAccuracy: null, heading: null, speed: null },
+                        timestamp: Date.now(),
+                    };
+                }
             }
+
+            // 3. If no stored location, get device location and update DB
+            if (!mapLocation) {
+                const currentLocation = await Location.getCurrentPositionAsync({});
+                mapLocation = currentLocation;
+
+                if (session?.user) {
+                    const fuzzedLatitude = currentLocation.coords.latitude + (Math.random() - 0.5) * 0.01;
+                    const fuzzedLongitude = currentLocation.coords.longitude + (Math.random() - 0.5) * 0.01;
+
+                    await supabase.from('profiles').update({
+                        latitude: fuzzedLatitude,
+                        longitude: fuzzedLongitude,
+                    }).eq('id', session.user.id);
+                }
+            }
+
+            setLocation(mapLocation);
 
             // 4. Fetch Nearby Profiles
             fetchProfiles();
@@ -75,6 +96,29 @@ export default function MapScreen() {
         }
     };
 
+    const handleRefreshLocation = async () => {
+        setLoading(true);
+        try {
+            const currentLocation = await Location.getCurrentPositionAsync({});
+            setLocation(currentLocation);
+
+            if (session?.user) {
+                const fuzzedLatitude = currentLocation.coords.latitude + (Math.random() - 0.5) * 0.01;
+                const fuzzedLongitude = currentLocation.coords.longitude + (Math.random() - 0.5) * 0.01;
+
+                await supabase.from('profiles').update({
+                    latitude: fuzzedLatitude,
+                    longitude: fuzzedLongitude,
+                }).eq('id', session.user.id);
+            }
+            fetchProfiles();
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     if (loading || !location) {
         return (
             <View className="flex-1 justify-center items-center bg-white dark:bg-black">
@@ -89,6 +133,13 @@ export default function MapScreen() {
             <Suspense fallback={<ActivityIndicator size="large" color={colorScheme === 'dark' ? 'white' : 'black'} />}>
                 <WebMap location={location} profiles={profiles} session={session} />
             </Suspense>
+
+            <TouchableOpacity
+                onPress={handleRefreshLocation}
+                className="absolute bottom-6 right-6 bg-white dark:bg-neutral-800 p-4 rounded-full shadow-lg border border-gray-200 dark:border-neutral-700 z-50"
+            >
+                <Locate size={24} color={colorScheme === 'dark' ? 'white' : 'black'} />
+            </TouchableOpacity>
         </View>
     );
 }

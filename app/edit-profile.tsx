@@ -183,7 +183,7 @@ export default function EditProfileScreen() {
                         longitude = geocoded[0].longitude + (Math.random() - 0.5) * 0.01;
                     }
                 } catch (e) {
-                    console.log("Geocoding failed:", e);
+                    console.error("Geocoding failed:", e);
                 }
             }
 

@@ -1,7 +1,6 @@
 import { useAudioPlayer } from 'expo-audio';
 import { Pause, Play } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
-import { useEffect } from 'react';
 import { Image, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 export interface MusicianProfile {
@@ -11,12 +10,12 @@ export interface MusicianProfile {
     skills?: string;
     avatar_url?: string;
     intro_audio_url?: string;
+    address?: string;
     looking_for?: string;
 }
 
 export default function MusicianCard({ profile }: { profile: MusicianProfile }) {
     const { colorScheme } = useColorScheme();
-
     const player = useAudioPlayer(profile.intro_audio_url || '');
 
     const playSound = () => {
@@ -27,12 +26,6 @@ export default function MusicianCard({ profile }: { profile: MusicianProfile }) 
             player.play();
         }
     };
-
-    useEffect(() => {
-        return () => {
-            // Cleanup if needed, though useAudioPlayer handles most lifecycle
-        };
-    }, []);
 
     return (
         <View className={`bg-white dark:bg-neutral-900 p-4 rounded-[32px] border border-neutral-200 dark:border-neutral-800 items-center shadow-sm m-2 ${Platform.OS === 'web' ? 'w-full max-w-[280px]' : 'flex-1'}`}>
@@ -91,13 +84,15 @@ export default function MusicianCard({ profile }: { profile: MusicianProfile }) 
                 </Text>
                 <View className="flex-row flex-wrap justify-center gap-2">
                     {profile.skills ? (
-                        profile.skills.split(',').slice(0, 3).map((skill, index) => (
-                            <View key={index} className="bg-white dark:bg-neutral-800 px-3 py-1 rounded-full border border-neutral-200 dark:border-neutral-700 shadow-sm">
-                                <Text className="text-neutral-600 dark:text-neutral-300 text-[10px] font-bold">{skill.trim()}</Text>
-                            </View>
-                        ))
+                        <>
+                            {profile.skills.split(',').slice(0, 3).map((skill, index) => (
+                                <View key={index} className="bg-white dark:bg-neutral-800 px-3 py-1 rounded-full border border-neutral-200 dark:border-neutral-700 shadow-sm">
+                                    <Text className="text-neutral-600 dark:text-neutral-300 text-[10px] font-bold">{skill.trim()}</Text>
+                                </View>
+                            ))}
+                        </>
                     ) : (
-                        <Text className="text-neutral-300 text-[10px]">No skills listed</Text>
+                        <Text className="text-gray-300 text-[10px] italic">No skills</Text>
                     )}
                 </View>
             </View>
