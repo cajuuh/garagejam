@@ -19,7 +19,7 @@ export default function HomeScreen() {
       if (!refreshing) setLoading(true);
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, full_name, username, skills, avatar_url, intro_audio_url, location, looking_for')
+        .select('id, full_name, username, skills, avatar_url, intro_audio_url, address, looking_for')
         .order('updated_at', { ascending: false });
 
       if (error) {
