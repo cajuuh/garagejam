@@ -236,7 +236,7 @@ export default function Profile({ session }: { session: Session }) {
               {friends.map((friend) => (
                 <TouchableOpacity
                   key={friend.id}
-                  className="items-center w-1/4 p-2"
+                  className="items-center w-1/12 p-2"
                   onPress={() => router.push(`/user/${friend.id}`)}
                 >
                   <Image
