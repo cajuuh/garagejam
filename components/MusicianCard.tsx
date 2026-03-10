@@ -1,6 +1,7 @@
 import { useAudioPlayer } from 'expo-audio';
-import { MapPin, Play, Square } from 'lucide-react-native';
-import { Image, Text, TouchableOpacity, View } from 'react-native';
+import { Pause, Play } from 'lucide-react-native';
+import { useColorScheme } from 'nativewind';
+import { Image, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 export interface MusicianProfile {
     id: string;
@@ -14,6 +15,7 @@ export interface MusicianProfile {
 }
 
 export default function MusicianCard({ profile }: { profile: MusicianProfile }) {
+    const { colorScheme } = useColorScheme();
     const player = useAudioPlayer(profile.intro_audio_url || '');
 
     const playSound = () => {
@@ -26,60 +28,73 @@ export default function MusicianCard({ profile }: { profile: MusicianProfile }) 
     };
 
     return (
-        <View className="flex-1 bg-white p-3 rounded-2xl m-1 shadow-sm border border-gray-100 items-center justify-between aspect-[0.8]" style={{ maxWidth: '25%' }}>
-            <View className="items-center w-full">
+        <View className={`bg-white dark:bg-neutral-900 p-4 rounded-[32px] border border-neutral-200 dark:border-neutral-800 items-center shadow-sm m-2 ${Platform.OS === 'web' ? 'w-full max-w-[280px]' : 'flex-1'}`}>
+
+            {/* 1. Profile Image (O Círculo do topo) */}
+            <View className="mb-6 shadow-md rounded-full bg-white dark:bg-neutral-900">
                 <Image
-                    source={
-                        profile.avatar_url
-                            ? { uri: profile.avatar_url }
-                            : require('../assets/images/default-avatar.png')
-                    }
-                    className="w-16 h-16 rounded-full bg-gray-200 border-2 border-gray-50 mb-2"
-                    style={{ width: 64, height: 64 }}
+                    source={profile.avatar_url ? { uri: profile.avatar_url } : require('../assets/images/default-avatar.png')}
+                    className="w-24 h-24 rounded-full bg-neutral-100 dark:bg-neutral-800 border-2 border-white dark:border-neutral-950"
+                    style={{ width: 96, height: 96 }}
                     resizeMode="cover"
                 />
-
-                {/* Play Button Overlay */}
-                {profile.intro_audio_url && (
-                    <TouchableOpacity
-                        onPress={playSound}
-                        className="absolute top-10 right-0 bg-black rounded-full p-1.5 border-2 border-white shadow-sm"
-                    >
-                        {player.playing ? <Square size={10} color="white" fill="white" /> : <Play size={10} color="white" fill="white" />}
-                    </TouchableOpacity>
-                )}
-
-                <Text className="text-sm font-bold text-gray-900 text-center leading-tight" numberOfLines={1}>
-                    {profile.full_name || profile.username || 'Musician'}
-                </Text>
-                <Text className="text-gray-400 text-[10px] text-center mb-1">@{profile.username || 'unknown'}</Text>
-
-                {profile.address ? (
-                    <View className="flex-row items-center mb-1">
-                        <MapPin size={10} color="#9ca3af" />
-                        <Text className="text-gray-400 text-[10px] ml-1" numberOfLines={1}>{profile.address}</Text>
-                    </View>
-                ) : <View className="h-3 mb-1" />}
             </View>
 
-            {/* Skills */}
-            <View className="flex-row flex-wrap justify-center gap-1 w-full">
-                {profile.skills ? (
+            {/* Nome e Usuário (Opcional, mas bom para contexto) */}
+            <Text className="text-lg font-bold text-neutral-800 dark:text-neutral-100 mb-1">
+                {profile.full_name || "Músico"}
+            </Text>
+
+            {/* Description / Looking For */}
+            <View className="w-full mb-4 min-h-[100px] flex justify-center">
+                {!!profile.looking_for && (
                     <>
-                        {profile.skills.split(',').slice(0, 2).map((skill, index) => (
-                            <View key={index} className="bg-gray-50 px-1.5 py-0.5 rounded-md border border-gray-100">
-                                <Text className="text-gray-600 text-[9px] font-medium" numberOfLines={1}>{skill.trim()}</Text>
-                            </View>
-                        ))}
-                        {profile.skills.split(',').length > 2 && (
-                            <View className="bg-gray-100 px-1.5 py-0.5 rounded-md">
-                                <Text className="text-gray-500 text-[9px] font-medium">+{profile.skills.split(',').length - 2}</Text>
-                            </View>
-                        )}
+                        <Text className="text-[10px] uppercase font-black text-neutral-400 dark:text-neutral-500 text-center mb-1 tracking-tighter">
+                            Looking For
+                        </Text>
+                        <ScrollView className="max-h-24 w-full" nestedScrollEnabled indicatorStyle={colorScheme === 'dark' ? 'white' : 'black'}>
+                            <Text className="text-xs text-neutral-500 dark:text-neutral-400 text-center px-2 leading-4">
+                                {profile.looking_for}
+                            </Text>
+                        </ScrollView>
                     </>
-                ) : (
-                    <Text className="text-gray-300 text-[10px] italic">No skills</Text>
                 )}
+            </View>
+
+            {/* 2. Audio Section (O bloco central do desenho) */}
+            <View className="w-full mb-6 h-14">
+                {!!profile.intro_audio_url && (
+                    <TouchableOpacity
+                        onPress={playSound}
+                        activeOpacity={0.7}
+                        className={`w-full h-full flex-row items-center justify-center py-4 rounded-2xl ${player.playing ? 'bg-emerald-500' : 'bg-neutral-900 dark:bg-neutral-200'}`}
+                    >
+                        {player.playing ? <Pause size={20} color="white" /> : <Play size={20} color={colorScheme === 'dark' ? 'black' : 'white'} fill={colorScheme === 'dark' ? 'black' : 'white'} />}
+                        <Text className={`font-bold ml-2 tracking-widest uppercase text-xs ${player.playing ? 'text-white' : 'text-white dark:text-black'}`}>
+                            {player.playing ? 'Playing...' : 'Audio Intro'}
+                        </Text>
+                    </TouchableOpacity>
+                )}
+            </View>
+
+            {/* 3. Skills Section (O bloco com tags no fundo) */}
+            <View className="w-full bg-neutral-50 dark:bg-neutral-950 p-3 rounded-2xl border border-neutral-100 dark:border-neutral-800">
+                <Text className="text-[10px] uppercase font-black text-neutral-400 dark:text-neutral-500 text-center mb-2 tracking-tighter">
+                    Skills
+                </Text>
+                <View className="flex-row flex-wrap justify-center gap-2">
+                    {profile.skills ? (
+                        <>
+                            {profile.skills.split(',').slice(0, 3).map((skill, index) => (
+                                <View key={index} className="bg-white dark:bg-neutral-800 px-3 py-1 rounded-full border border-neutral-200 dark:border-neutral-700 shadow-sm">
+                                    <Text className="text-neutral-600 dark:text-neutral-300 text-[10px] font-bold">{skill.trim()}</Text>
+                                </View>
+                            ))}
+                        </>
+                    ) : (
+                        <Text className="text-gray-300 text-[10px] italic">No skills</Text>
+                    )}
+                </View>
             </View>
         </View>
     );

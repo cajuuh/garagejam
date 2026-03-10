@@ -281,7 +281,6 @@ export default function EditProfileScreen() {
                     locationString = parts.join(', ');
                 }
             } catch (e) {
-                console.error("Reverse geocoding failed (using coords only):", e);
             }
 
             setFormData(prev => ({
@@ -416,9 +415,6 @@ export default function EditProfileScreen() {
                                                 <Locate size={20} color={colorScheme === 'dark' ? 'white' : '#6b7280'} />}
                                         </TouchableOpacity>
                                     </View>
-                                    <Text className="text-xs text-gray-400 dark:text-gray-500 mt-1 ml-1">
-                                        {formData.latitude !== null && formData.latitude !== undefined && formData.longitude !== null && formData.longitude !== undefined ? `Lat: ${formData.latitude.toFixed(5)}, Long: ${formData.longitude.toFixed(5)}` : ''}
-                                    </Text>
                                 </View>
                             </View>
                         </View>

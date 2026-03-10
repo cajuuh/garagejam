@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, RefreshControl, Text, View, useColorScheme } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Platform, RefreshControl, Text, View, useColorScheme } from 'react-native';
 import MusicianCard, { MusicianProfile } from '../../components/MusicianCard';
 import { supabase } from '../../lib/supabase';
 
@@ -45,6 +45,8 @@ export default function HomeScreen() {
     <MusicianCard profile={item} />
   );
 
+  const numColumns = Platform.OS === 'web' ? 6 : 1;
+
   return (
     <View className="flex-1 bg-gray-50 dark:bg-black">
       <Stack.Screen options={{ headerShown: false }} />
@@ -61,12 +63,13 @@ export default function HomeScreen() {
         </View>
       ) : (
         <FlatList
+          key={numColumns}
           data={profiles}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
           contentContainerStyle={{ padding: 8, paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
-          numColumns={6}
+          numColumns={numColumns}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colorScheme === 'dark' ? '#FFF' : '#000'} />
           }
