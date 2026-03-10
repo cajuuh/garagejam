@@ -37,7 +37,7 @@ export default function EditProfileScreen() {
         username: string;
         full_name: string;
         website: string;
-        location: string;
+        address: string;
         intro_audio_url: string;
         avatar_url: string;
         skills: string;
@@ -48,7 +48,7 @@ export default function EditProfileScreen() {
         username: '',
         full_name: '',
         website: '',
-        location: '',
+        address: '',
         intro_audio_url: '',
         avatar_url: '',
         skills: '',
@@ -68,7 +68,7 @@ export default function EditProfileScreen() {
 
             const { data, error, status } = await supabase
                 .from('profiles')
-                .select(`username, full_name, website, location, avatar_url, intro_audio_url, skills, looking_for, latitude, longitude`)
+                .select(`username, full_name, website, address, avatar_url, intro_audio_url, skills, looking_for, latitude, longitude`)
                 .eq('id', session?.user.id)
                 .single();
 
@@ -81,7 +81,7 @@ export default function EditProfileScreen() {
                     username: data.username || '',
                     full_name: data.full_name || '',
                     website: data.website || '',
-                    location: data.location || '',
+                    address: data.address || '',
                     avatar_url: data.avatar_url || '',
                     intro_audio_url: data.intro_audio_url || '',
                     skills: data.skills || '',
@@ -173,17 +173,17 @@ export default function EditProfileScreen() {
             let latitude = formData.latitude;
             let longitude = formData.longitude;
 
-            // If location text is present but coords are missing (e.g. manual entry), try to geocode
-            if (formData.location && (latitude === null || longitude === null)) {
+            // If address text is present but coords are missing (e.g. manual entry), try to geocode
+            if (formData.address && (latitude === null || longitude === null)) {
                 try {
-                    const geocoded = await Location.geocodeAsync(formData.location);
+                    const geocoded = await Location.geocodeAsync(formData.address);
                     if (geocoded.length > 0) {
                         // Fuzz the geocoded result as well
                         latitude = geocoded[0].latitude + (Math.random() - 0.5) * 0.01;
                         longitude = geocoded[0].longitude + (Math.random() - 0.5) * 0.01;
                     }
                 } catch (e) {
-                    console.log("Geocoding failed:", e);
+                    console.error("Geocoding failed:", e);
                 }
             }
 
@@ -224,7 +224,7 @@ export default function EditProfileScreen() {
     const handleChange = (key: string, value: string) => {
         setFormData(prev => {
             const updates: any = { [key]: value };
-            if (key === 'location') {
+            if (key === 'address') {
                 updates.latitude = null;
                 updates.longitude = null;
             }
@@ -262,13 +262,12 @@ export default function EditProfileScreen() {
             }
 
             const location = await Location.getCurrentPositionAsync({});
-            console.log('Edit Profile - Current Location:', location);
 
             // Fuzz immediately for privacy
             const fuzzedLat = location.coords.latitude + (Math.random() - 0.5) * 0.01;
             const fuzzedLong = location.coords.longitude + (Math.random() - 0.5) * 0.01;
 
-            let locationString = formData.location;
+            let locationString = formData.address;
 
             try {
                 const reverseGeocode = await Location.reverseGeocodeAsync({
@@ -277,18 +276,17 @@ export default function EditProfileScreen() {
                 });
 
                 if (reverseGeocode.length > 0) {
-                    console.log('Reverse Geocode Result:', reverseGeocode[0]);
                     const address = reverseGeocode[0];
                     const parts = [address.city, address.region || address.country].filter(Boolean);
                     locationString = parts.join(', ');
                 }
             } catch (e) {
-                console.log("Reverse geocoding failed (using coords only):", e);
+                console.error("Reverse geocoding failed (using coords only):", e);
             }
 
             setFormData(prev => ({
                 ...prev,
-                location: locationString,
+                address: locationString,
                 latitude: fuzzedLat,
                 longitude: fuzzedLong,
             }));
@@ -407,8 +405,8 @@ export default function EditProfileScreen() {
                                         <MapPin size={18} color="#6b7280" />
                                         <TextInput
                                             className="flex-1 ml-3 text-gray-900 dark:text-white"
-                                            value={formData.location}
-                                            onChangeText={(text) => handleChange('location', text)}
+                                            value={formData.address}
+                                            onChangeText={(text) => handleChange('address', text)}
                                             placeholder="San Francisco, CA"
                                             placeholderTextColor="#9ca3af"
                                         />

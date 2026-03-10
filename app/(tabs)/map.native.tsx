@@ -1,8 +1,9 @@
 import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
+import { Locate } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import MapView, { Callout, Marker, PROVIDER_DEFAULT } from 'react-native-maps';
 import MapPin from '../../components/MapPin';
 import { useSession } from '../../hooks/useSession';
@@ -36,25 +37,42 @@ export default function MapScreen() {
                 return;
             }
 
-            // 2. Get Current Location
-            let currentLocation = await Location.getCurrentPositionAsync({});
-            console.log('Current Location:', currentLocation);
-            setLocation(currentLocation);
+            let mapLocation: Location.LocationObject | null = null;
 
-            // 3. Update User's Location in DB
+            // 2. Try to get stored location from DB first (to avoid overwriting with Simulator default)
             if (session?.user) {
-                // Fuzz location for privacy (approx +/- 500m) to avoid legal issues with precise tracking
-                const fuzzedLatitude = currentLocation.coords.latitude + (Math.random() - 0.5) * 0.01;
-                const fuzzedLongitude = currentLocation.coords.longitude + (Math.random() - 0.5) * 0.01;
+                const { data } = await supabase
+                    .from('profiles')
+                    .select('latitude, longitude')
+                    .eq('id', session.user.id)
+                    .single();
 
-                const { error } = await supabase.from('profiles').update({
-                    latitude: fuzzedLatitude,
-                    longitude: fuzzedLongitude,
-                }).eq('id', session.user.id);
-
-                if (error) console.error('Error updating location:', error);
-                else console.log('Location updated in DB');
+                if (data?.latitude && data?.longitude) {
+                    mapLocation = {
+                        coords: { latitude: data.latitude, longitude: data.longitude, altitude: null, accuracy: null, altitudeAccuracy: null, heading: null, speed: null },
+                        timestamp: Date.now(),
+                    };
+                }
             }
+
+            // 3. If no stored location, get device location and update DB
+            if (!mapLocation) {
+                const currentLocation = await Location.getCurrentPositionAsync({});
+                mapLocation = currentLocation;
+
+                if (session?.user) {
+                    // Fuzz location for privacy (approx +/- 500m)
+                    const fuzzedLatitude = currentLocation.coords.latitude + (Math.random() - 0.5) * 0.01;
+                    const fuzzedLongitude = currentLocation.coords.longitude + (Math.random() - 0.5) * 0.01;
+
+                    await supabase.from('profiles').update({
+                        latitude: fuzzedLatitude,
+                        longitude: fuzzedLongitude,
+                    }).eq('id', session.user.id);
+                }
+            }
+
+            setLocation(mapLocation);
 
             // 4. Fetch Nearby Profiles
             fetchProfiles();
@@ -72,12 +90,34 @@ export default function MapScreen() {
                 .not('longitude', 'is', null);
 
             if (error) throw error;
-            console.log('Fetched profiles:', data?.length);
             setProfiles(data || []);
         } catch (error) {
             if (error instanceof Error) {
                 Alert.alert('Error fetching jams', error.message);
             }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleRefreshLocation = async () => {
+        setLoading(true);
+        try {
+            const currentLocation = await Location.getCurrentPositionAsync({});
+            setLocation(currentLocation);
+
+            if (session?.user) {
+                const fuzzedLatitude = currentLocation.coords.latitude + (Math.random() - 0.5) * 0.01;
+                const fuzzedLongitude = currentLocation.coords.longitude + (Math.random() - 0.5) * 0.01;
+
+                await supabase.from('profiles').update({
+                    latitude: fuzzedLatitude,
+                    longitude: fuzzedLongitude,
+                }).eq('id', session.user.id);
+            }
+            fetchProfiles();
+        } catch (error) {
+            Alert.alert('Error', 'Could not refresh location');
         } finally {
             setLoading(false);
         }
@@ -133,6 +173,13 @@ export default function MapScreen() {
                     </Marker>
                 ))}
             </MapView>
+
+            <TouchableOpacity
+                onPress={handleRefreshLocation}
+                className="absolute bottom-6 right-6 bg-white dark:bg-neutral-800 p-4 rounded-full shadow-lg border border-gray-200 dark:border-neutral-700"
+            >
+                <Locate size={24} color={colorScheme === 'dark' ? 'white' : 'black'} />
+            </TouchableOpacity>
         </View>
     );
 }
