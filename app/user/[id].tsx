@@ -1,9 +1,10 @@
 import { useAudioPlayer } from 'expo-audio';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowLeft, Briefcase, MapPin, MicVocal, Pause, Play } from 'lucide-react-native';
+import { ArrowLeft, Briefcase, Check, MapPin, MicVocal, Pause, Play, UserPlus, X } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, ImageBackground, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useSession } from '../../hooks/useSession';
 import { supabase } from '../../lib/supabase';
 
 type MusicianProfile = {
@@ -21,15 +22,21 @@ type MusicianProfile = {
 export default function UserProfileScreen() {
     const { id } = useLocalSearchParams();
     const router = useRouter();
+    const { session } = useSession();
     const { colorScheme } = useColorScheme();
     const [profile, setProfile] = useState<MusicianProfile | null>(null);
     const [loading, setLoading] = useState(true);
+    const [connectionStatus, setConnectionStatus] = useState<'none' | 'pending' | 'accepted' | 'received'>('none');
+    const [connectionId, setConnectionId] = useState<string | null>(null);
 
     const player = useAudioPlayer(profile?.intro_audio_url || '');
 
     useEffect(() => {
         fetchProfile();
-    }, [id]);
+        if (session?.user && id && session.user.id !== id) {
+            fetchConnectionStatus();
+        }
+    }, [id, session]);
 
     async function fetchProfile() {
         try {
@@ -49,6 +56,63 @@ export default function UserProfileScreen() {
             router.back();
         } finally {
             setLoading(false);
+        }
+    }
+
+    async function fetchConnectionStatus() {
+        if (!session?.user || !id) return;
+
+        const { data, error } = await supabase
+            .from('connections')
+            .select('*')
+            .or(`and(requester_id.eq.${session.user.id},receiver_id.eq.${id}),and(requester_id.eq.${id},receiver_id.eq.${session.user.id})`)
+            .maybeSingle();
+
+        if (data) {
+            setConnectionId(data.id);
+            if (data.status === 'accepted') {
+                setConnectionStatus('accepted');
+            } else if (data.requester_id === session.user.id) {
+                setConnectionStatus('pending');
+            } else {
+                setConnectionStatus('received');
+            }
+        } else {
+            setConnectionStatus('none');
+        }
+    }
+
+    async function handleConnect() {
+        if (!session?.user || !id) return;
+
+        try {
+            const { error } = await supabase
+                .from('connections')
+                .insert({
+                    requester_id: session.user.id,
+                    receiver_id: id,
+                    status: 'pending'
+                });
+
+            if (error) throw error;
+            setConnectionStatus('pending');
+        } catch (error) {
+            if (error instanceof Error) Alert.alert('Error', error.message);
+        }
+    }
+
+    async function handleUpdateStatus(status: 'accepted' | 'rejected') {
+        if (!connectionId) return;
+        try {
+            const { error } = await supabase
+                .from('connections')
+                .update({ status })
+                .eq('id', connectionId);
+
+            if (error) throw error;
+            setConnectionStatus(status === 'accepted' ? 'accepted' : 'none');
+        } catch (error) {
+            if (error instanceof Error) Alert.alert('Error', error.message);
         }
     }
 
@@ -120,6 +184,48 @@ export default function UserProfileScreen() {
                         <Text className="text-gray-600 dark:text-neutral-300 text-xs ml-1.5">{profile.address || 'Location not set'}</Text>
                     </View>
                 </View>
+
+                {/* Connection Actions */}
+                {session?.user && session.user.id !== profile.id && (
+                    <View className="mt-6 flex-row justify-center">
+                        {connectionStatus === 'none' && (
+                            <TouchableOpacity
+                                onPress={handleConnect}
+                                className="bg-black dark:bg-white px-6 py-3 rounded-full flex-row items-center shadow-sm"
+                            >
+                                <UserPlus size={18} color={colorScheme === 'dark' ? 'black' : 'white'} />
+                                <Text className="text-white dark:text-black font-bold ml-2">Connect</Text>
+                            </TouchableOpacity>
+                        )}
+                        {connectionStatus === 'pending' && (
+                            <View className="bg-gray-100 dark:bg-neutral-800 px-6 py-3 rounded-full flex-row items-center">
+                                <Text className="text-gray-500 dark:text-gray-400 font-bold">Request Sent</Text>
+                            </View>
+                        )}
+                        {connectionStatus === 'accepted' && (
+                            <View className="bg-emerald-100 dark:bg-emerald-900/30 px-6 py-3 rounded-full flex-row items-center border border-emerald-200 dark:border-emerald-800">
+                                <Check size={18} color="#10b981" />
+                                <Text className="text-emerald-700 dark:text-emerald-400 font-bold ml-2">Connected</Text>
+                            </View>
+                        )}
+                        {connectionStatus === 'received' && (
+                            <View className="flex-row gap-3">
+                                <TouchableOpacity
+                                    onPress={() => handleUpdateStatus('accepted')}
+                                    className="bg-black dark:bg-white px-6 py-3 rounded-full flex-row items-center"
+                                >
+                                    <Text className="text-white dark:text-black font-bold">Accept</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    onPress={() => handleUpdateStatus('rejected')}
+                                    className="bg-gray-200 dark:bg-neutral-800 px-4 py-3 rounded-full flex-row items-center"
+                                >
+                                    <X size={18} color={colorScheme === 'dark' ? 'white' : 'black'} />
+                                </TouchableOpacity>
+                            </View>
+                        )}
+                    </View>
+                )}
             </View>
 
             {/* Content Cards */}

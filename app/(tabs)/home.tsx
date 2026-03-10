@@ -2,22 +2,42 @@ import { Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, FlatList, Platform, RefreshControl, Text, View, useColorScheme } from 'react-native';
 import MusicianCard, { MusicianProfile } from '../../components/MusicianCard';
+import { useSession } from '../../hooks/useSession';
 import { supabase } from '../../lib/supabase';
 
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
+  const { session } = useSession();
   const [profiles, setProfiles] = useState<MusicianProfile[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchProfiles();
-  }, []);
+    if (session) {
+      fetchProfiles();
+    }
+  }, [session]);
 
   const fetchProfiles = async () => {
     try {
       if (!refreshing) setLoading(true);
-      const { data, error } = await supabase
+
+      // 1. Get friend IDs
+      let friendIds: string[] = [];
+      if (session?.user) {
+        const { data: connections } = await supabase
+          .from('connections')
+          .select('requester_id, receiver_id')
+          .eq('status', 'accepted')
+          .or(`requester_id.eq.${session.user.id},receiver_id.eq.${session.user.id}`);
+
+        if (connections) {
+          friendIds = connections.map(c => c.requester_id === session.user.id ? c.receiver_id : c.requester_id);
+        }
+      }
+
+      // 2. Get all profiles
+      const { data: profilesData, error } = await supabase
         .from('profiles')
         .select('id, full_name, username, skills, avatar_url, intro_audio_url, address, looking_for')
         .order('updated_at', { ascending: false });
@@ -25,7 +45,8 @@ export default function HomeScreen() {
       if (error) {
         throw error;
       }
-      setProfiles(data || []);
+      const profilesWithFriendStatus = profilesData.map(p => ({ ...p, is_friend: friendIds.includes(p.id) }));
+      setProfiles(profilesWithFriendStatus || []);
     } catch (error) {
       if (error instanceof Error) {
         Alert.alert('Error', error.message);

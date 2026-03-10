@@ -1,5 +1,6 @@
 import { useAudioPlayer } from 'expo-audio';
-import { Pause, Play } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import { Check, Pause, Play } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { Image, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
@@ -12,13 +13,17 @@ export interface MusicianProfile {
     intro_audio_url?: string;
     address?: string;
     looking_for?: string;
+    is_friend?: boolean;
 }
 
 export default function MusicianCard({ profile }: { profile: MusicianProfile }) {
     const { colorScheme } = useColorScheme();
+    const router = useRouter();
     const player = useAudioPlayer(profile.intro_audio_url || '');
 
-    const playSound = () => {
+    const playSound = (e: any) => {
+        // Prevent the card's navigation when clicking the play button
+        e.stopPropagation();
         if (!profile.intro_audio_url) return;
         if (player.playing) {
             player.pause();
@@ -28,7 +33,13 @@ export default function MusicianCard({ profile }: { profile: MusicianProfile }) 
     };
 
     return (
-        <View className={`bg-white dark:bg-neutral-900 p-4 rounded-[32px] border border-neutral-200 dark:border-neutral-800 items-center shadow-sm m-2 ${Platform.OS === 'web' ? 'w-full max-w-[280px]' : 'flex-1'}`}>
+        <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => router.push({
+                pathname: '/user/[id]' as any,
+                params: { id: profile.id },
+            })}
+            className={`bg-white dark:bg-neutral-900 p-4 rounded-[32px] border border-neutral-200 dark:border-neutral-800 items-center shadow-sm m-2 ${Platform.OS === 'web' ? 'w-full max-w-[280px]' : 'flex-1'}`}>
 
             {/* 1. Profile Image (O Círculo do topo) */}
             <View className="mb-6 shadow-md rounded-full bg-white dark:bg-neutral-900">
@@ -38,6 +49,11 @@ export default function MusicianCard({ profile }: { profile: MusicianProfile }) 
                     style={{ width: 96, height: 96 }}
                     resizeMode="cover"
                 />
+                {profile.is_friend && (
+                    <View className="absolute top-0 right-0 bg-emerald-500 p-1.5 rounded-full border-2 border-white dark:border-neutral-900">
+                        <Check size={14} color="white" />
+                    </View>
+                )}
             </View>
 
             {/* Nome e Usuário (Opcional, mas bom para contexto) */}
@@ -65,7 +81,7 @@ export default function MusicianCard({ profile }: { profile: MusicianProfile }) 
             <View className="w-full mb-6 h-14">
                 {!!profile.intro_audio_url && (
                     <TouchableOpacity
-                        onPress={playSound}
+                        onPress={(e) => playSound(e)}
                         activeOpacity={0.7}
                         className={`w-full h-full flex-row items-center justify-center py-4 rounded-2xl ${player.playing ? 'bg-emerald-500' : 'bg-neutral-900 dark:bg-neutral-200'}`}
                     >
@@ -96,6 +112,6 @@ export default function MusicianCard({ profile }: { profile: MusicianProfile }) 
                     )}
                 </View>
             </View>
-        </View>
+        </TouchableOpacity>
     );
 }
