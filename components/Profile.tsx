@@ -1,8 +1,8 @@
 import { Session } from '@supabase/supabase-js';
-import { Stack, useRouter } from 'expo-router';
+import { Stack, useFocusEffect, useRouter } from 'expo-router';
 import { Briefcase, Check, Edit3, LogOut, MapPin, MicVocal, Moon, Music, Sun, UserPlus, Users, X } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Image, ImageBackground, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { supabase } from '../lib/supabase';
 
@@ -41,13 +41,15 @@ export default function Profile({ session }: { session: Session }) {
   const [requests, setRequests] = useState<ConnectionRequest[]>([]);
   const [friends, setFriends] = useState<FriendProfile[]>([]);
 
-  useEffect(() => {
-    if (session) {
-      getProfile();
-      fetchRequests();
-      fetchFriends();
-    }
-  }, [session]);
+  useFocusEffect(
+    useCallback(() => {
+      if (session) {
+        getProfile();
+        fetchRequests();
+        fetchFriends();
+      }
+    }, [session])
+  );
 
   async function getProfile() {
     try {
