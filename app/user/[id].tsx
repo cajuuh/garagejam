@@ -13,7 +13,7 @@ type MusicianProfile = {
     avatar_url: string;
     skills: string;
     looking_for: string;
-    location: string;
+    address: string;
     website: string;
     intro_audio_url: string;
 };
@@ -117,7 +117,7 @@ export default function UserProfileScreen() {
                 <View className="flex-row items-center mt-4 space-x-4">
                     <View className="flex-row items-center bg-gray-100 dark:bg-neutral-800 px-3 py-1.5 rounded-full">
                         <MapPin size={14} color="#6b7280" />
-                        <Text className="text-gray-600 dark:text-neutral-300 text-xs ml-1.5">{profile.location || 'Location not set'}</Text>
+                        <Text className="text-gray-600 dark:text-neutral-300 text-xs ml-1.5">{profile.address || 'Location not set'}</Text>
                     </View>
                 </View>
             </View>

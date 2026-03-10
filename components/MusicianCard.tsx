@@ -2,7 +2,7 @@ import { useAudioPlayer } from 'expo-audio';
 import { Pause, Play } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useEffect } from 'react';
-import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 
 export interface MusicianProfile {
     id: string;
@@ -35,7 +35,7 @@ export default function MusicianCard({ profile }: { profile: MusicianProfile }) 
     }, []);
 
     return (
-        <View className="bg-white dark:bg-neutral-900 p-4 rounded-[32px] border border-neutral-200 dark:border-neutral-800 items-center w-full max-w-[280px] shadow-sm m-2">
+        <View className={`bg-white dark:bg-neutral-900 p-4 rounded-[32px] border border-neutral-200 dark:border-neutral-800 items-center shadow-sm m-2 ${Platform.OS === 'web' ? 'w-full max-w-[280px]' : 'flex-1'}`}>
 
             {/* 1. Profile Image (O Círculo do topo) */}
             <View className="mb-6 shadow-md rounded-full bg-white dark:bg-neutral-900">
@@ -53,32 +53,36 @@ export default function MusicianCard({ profile }: { profile: MusicianProfile }) 
             </Text>
 
             {/* Description / Looking For */}
-            {!!profile.looking_for && (
-                <View className="w-full mb-4">
-                    <Text className="text-[10px] uppercase font-black text-neutral-400 dark:text-neutral-500 text-center mb-1 tracking-tighter">
-                        Looking For
-                    </Text>
-                    <ScrollView className="max-h-24 w-full" nestedScrollEnabled indicatorStyle={colorScheme === 'dark' ? 'white' : 'black'}>
-                        <Text className="text-xs text-neutral-500 dark:text-neutral-400 text-center px-2 leading-4">
-                            {profile.looking_for}
+            <View className="w-full mb-4 min-h-[100px] flex justify-center">
+                {!!profile.looking_for && (
+                    <>
+                        <Text className="text-[10px] uppercase font-black text-neutral-400 dark:text-neutral-500 text-center mb-1 tracking-tighter">
+                            Looking For
                         </Text>
-                    </ScrollView>
-                </View>
-            )}
+                        <ScrollView className="max-h-24 w-full" nestedScrollEnabled indicatorStyle={colorScheme === 'dark' ? 'white' : 'black'}>
+                            <Text className="text-xs text-neutral-500 dark:text-neutral-400 text-center px-2 leading-4">
+                                {profile.looking_for}
+                            </Text>
+                        </ScrollView>
+                    </>
+                )}
+            </View>
 
             {/* 2. Audio Section (O bloco central do desenho) */}
-            {!!profile.intro_audio_url && (
-                <TouchableOpacity
-                    onPress={playSound}
-                    activeOpacity={0.7}
-                    className={`w-full flex-row items-center justify-center py-4 rounded-2xl mb-6 ${player.playing ? 'bg-emerald-500' : 'bg-neutral-900 dark:bg-neutral-200'}`}
-                >
-                    {player.playing ? <Pause size={20} color="white" /> : <Play size={20} color={colorScheme === 'dark' ? 'black' : 'white'} fill={colorScheme === 'dark' ? 'black' : 'white'} />}
-                    <Text className={`font-bold ml-2 tracking-widest uppercase text-xs ${player.playing ? 'text-white' : 'text-white dark:text-black'}`}>
-                        {player.playing ? 'Playing...' : 'Audio Intro'}
-                    </Text>
-                </TouchableOpacity>
-            )}
+            <View className="w-full mb-6 h-14">
+                {!!profile.intro_audio_url && (
+                    <TouchableOpacity
+                        onPress={playSound}
+                        activeOpacity={0.7}
+                        className={`w-full h-full flex-row items-center justify-center py-4 rounded-2xl ${player.playing ? 'bg-emerald-500' : 'bg-neutral-900 dark:bg-neutral-200'}`}
+                    >
+                        {player.playing ? <Pause size={20} color="white" /> : <Play size={20} color={colorScheme === 'dark' ? 'black' : 'white'} fill={colorScheme === 'dark' ? 'black' : 'white'} />}
+                        <Text className={`font-bold ml-2 tracking-widest uppercase text-xs ${player.playing ? 'text-white' : 'text-white dark:text-black'}`}>
+                            {player.playing ? 'Playing...' : 'Audio Intro'}
+                        </Text>
+                    </TouchableOpacity>
+                )}
+            </View>
 
             {/* 3. Skills Section (O bloco com tags no fundo) */}
             <View className="w-full bg-neutral-50 dark:bg-neutral-950 p-3 rounded-2xl border border-neutral-100 dark:border-neutral-800">
