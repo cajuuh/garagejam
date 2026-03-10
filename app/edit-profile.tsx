@@ -173,19 +173,8 @@ export default function EditProfileScreen() {
             let latitude = formData.latitude;
             let longitude = formData.longitude;
 
-            // If address text is present but coords are missing (e.g. manual entry), try to geocode
-            if (formData.address && (latitude === null || longitude === null)) {
-                try {
-                    const geocoded = await Location.geocodeAsync(formData.address);
-                    if (geocoded.length > 0) {
-                        // Fuzz the geocoded result as well
-                        latitude = geocoded[0].latitude + (Math.random() - 0.5) * 0.01;
-                        longitude = geocoded[0].longitude + (Math.random() - 0.5) * 0.01;
-                    }
-                } catch (e) {
-                    console.error("Geocoding failed:", e);
-                }
-            }
+            // Geocoding from address text has been removed due to SDK deprecation.
+            // Coordinates are now only set when using the 'Get Location' button.
 
             if (image) {
                 avatarUrl = await uploadAvatar(session.user.id, image);
@@ -200,6 +189,7 @@ export default function EditProfileScreen() {
                 ...formData,
                 avatar_url: avatarUrl,
                 intro_audio_url: introAudioUrl,
+                address: formData.address || null, // Ensure empty string becomes null
                 latitude,
                 longitude,
                 updated_at: new Date(),
@@ -267,20 +257,38 @@ export default function EditProfileScreen() {
             const fuzzedLat = location.coords.latitude + (Math.random() - 0.5) * 0.01;
             const fuzzedLong = location.coords.longitude + (Math.random() - 0.5) * 0.01;
 
-            let locationString = formData.address;
+            let locationString = ''; // Default to empty string if reverse geocoding fails
 
             try {
                 const reverseGeocode = await Location.reverseGeocodeAsync({
                     latitude: location.coords.latitude,
                     longitude: location.coords.longitude
+                }).then((item) => {
+                    console.log('latitude:', location.coords.latitude);
+                    console.log('longitude:', location.coords.longitude);
+
+                    return item
                 });
+
+                console.log('Reverse Geocode Result:', reverseGeocode);
 
                 if (reverseGeocode.length > 0) {
                     const address = reverseGeocode[0];
-                    const parts = [address.city, address.region || address.country].filter(Boolean);
+                    // Try to construct a meaningful address from available fields
+                    const parts = [
+                        address.city || address.subregion || address.district || address.name,
+                        address.region || address.country
+                    ].filter(Boolean);
+
                     locationString = parts.join(', ');
                 }
+
+                // If after all that, we still have no string, provide a fallback.
+                if (!locationString) {
+                    locationString = "Approximate Location";
+                }
             } catch (e) {
+                console.error("Reverse geocoding failed:", e);
             }
 
             setFormData(prev => ({
@@ -402,19 +410,27 @@ export default function EditProfileScreen() {
                                     <Text className="text-gray-700 dark:text-gray-300 font-medium mb-1.5 text-sm">Location</Text>
                                     <View className="flex-row items-center bg-gray-50 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-700 rounded-xl px-3 h-12">
                                         <MapPin size={18} color="#6b7280" />
-                                        <TextInput
-                                            className="flex-1 ml-3 text-gray-900 dark:text-white"
-                                            value={formData.address}
-                                            onChangeText={(text) => handleChange('address', text)}
-                                            placeholder="San Francisco, CA"
-                                            placeholderTextColor="#9ca3af"
-                                        />
-                                        <TouchableOpacity onPress={handleGetCurrentLocation} disabled={gettingLocation}>
-                                            {gettingLocation ?
-                                                <ActivityIndicator size="small" color={colorScheme === 'dark' ? 'white' : 'black'} /> :
-                                                <Locate size={20} color={colorScheme === 'dark' ? 'white' : '#6b7280'} />}
-                                        </TouchableOpacity>
+                                        <Text
+                                            className={`flex-1 ml-3 ${formData.address && 'text-[#9ca3af]'}`}
+                                            numberOfLines={1}
+                                        >
+                                            {formData.address || "Use button to set location"}
+                                        </Text>
+                                        {Platform.OS !== 'web' && (
+                                            <TouchableOpacity onPress={handleGetCurrentLocation} disabled={gettingLocation}>
+                                                {gettingLocation ?
+                                                    <ActivityIndicator size="small" color={colorScheme === 'dark' ? 'white' : 'black'} /> :
+                                                    <Locate size={20} color={colorScheme === 'dark' ? 'white' : '#6b7280'} />}
+                                            </TouchableOpacity>
+                                        )}
                                     </View>
+                                    {Platform.OS === 'web' ? (
+                                        <Text className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-1 italic">To activate your location on the map, please use the mobile app.</Text>
+                                    ) : (
+                                        <Text className="text-xs text-gray-400 dark:text-gray-500 mt-1 ml-1">
+                                            {formData.latitude != null && formData.longitude != null ? `Lat: ${formData.latitude.toFixed(5)}, Long: ${formData.longitude.toFixed(5)}` : ''}
+                                        </Text>
+                                    )}
                                 </View>
                             </View>
                         </View>
