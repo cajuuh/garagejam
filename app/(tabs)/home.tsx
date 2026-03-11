@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Platform, RefreshControl, Text, View, useColorScheme } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Platform, RefreshControl, Text, View, useColorScheme, useWindowDimensions } from 'react-native';
 import MusicianCard, { MusicianProfile } from '../../components/MusicianCard';
 import { useSession } from '../../hooks/useSession';
 import { supabase } from '../../lib/supabase';
@@ -8,6 +8,7 @@ import { supabase } from '../../lib/supabase';
 export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const { session } = useSession();
+  const { width } = useWindowDimensions();
   const [profiles, setProfiles] = useState<MusicianProfile[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -66,7 +67,14 @@ export default function HomeScreen() {
     <MusicianCard profile={item} />
   );
 
-  const numColumns = Platform.OS === 'web' ? 6 : 1;
+  const getNumColumns = () => {
+    if (Platform.OS !== 'web') return 1;
+    if (width > 1200) return 4;
+    if (width > 900) return 3;
+    if (width > 600) return 2;
+    return 1;
+  };
+  const numColumns = getNumColumns();
 
   return (
     <View className="flex-1 bg-gray-50 dark:bg-black">
@@ -84,7 +92,7 @@ export default function HomeScreen() {
         </View>
       ) : (
         <FlatList
-          key={numColumns}
+          key={numColumns.toString()}
           data={profiles}
           renderItem={renderItem}
           keyExtractor={(item) => item.id}
