@@ -5,7 +5,7 @@ import { Stack, useRouter } from 'expo-router';
 import { AlignLeft, ArrowLeft, Camera, Globe, Locate, MapPin, Mic, Music, Plus, Trash2, User, X } from 'lucide-react-native';
 import { useColorScheme } from 'nativewind';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, Switch, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSession } from '../hooks/useSession';
 import { supabase } from '../lib/supabase';
 
@@ -44,6 +44,7 @@ export default function EditProfileScreen() {
         looking_for: string;
         latitude?: number | null;
         longitude?: number | null;
+        is_visible_on_map: boolean;
     }>({
         username: '',
         full_name: '',
@@ -55,6 +56,7 @@ export default function EditProfileScreen() {
         looking_for: '',
         latitude: null,
         longitude: null,
+        is_visible_on_map: false,
     });
 
     useEffect(() => {
@@ -68,7 +70,7 @@ export default function EditProfileScreen() {
 
             const { data, error, status } = await supabase
                 .from('profiles')
-                .select(`username, full_name, website, address, avatar_url, intro_audio_url, skills, looking_for, latitude, longitude`)
+                .select(`username, full_name, website, address, avatar_url, intro_audio_url, skills, looking_for, latitude, longitude, is_visible_on_map`)
                 .eq('id', session?.user.id)
                 .single();
 
@@ -88,6 +90,7 @@ export default function EditProfileScreen() {
                     looking_for: data.looking_for || '',
                     latitude: data.latitude || null,
                     longitude: data.longitude || null,
+                    is_visible_on_map: data.is_visible_on_map || false,
                 });
             }
         } catch (error) {
@@ -211,7 +214,7 @@ export default function EditProfileScreen() {
         }
     }
 
-    const handleChange = (key: string, value: string) => {
+    const handleChange = (key: string, value: string | boolean) => {
         setFormData(prev => {
             const updates: any = { [key]: value };
             if (key === 'address') {
@@ -245,13 +248,20 @@ export default function EditProfileScreen() {
     const handleGetCurrentLocation = async () => {
         try {
             setGettingLocation(true);
+            const serviceEnabled = await Location.hasServicesEnabledAsync();
+            if (!serviceEnabled) {
+                Alert.alert('Location Disabled', 'Please enable location services in your device settings.');
+                return;
+            }
+
             const { status } = await Location.requestForegroundPermissionsAsync();
             if (status !== 'granted') {
                 Alert.alert('Permission denied', 'Permission to access location was denied');
                 return;
             }
 
-            const location = await Location.getCurrentPositionAsync({});
+            // Use Balanced accuracy for better reliability on emulators and indoors
+            const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
 
             // Fuzz immediately for privacy
             const fuzzedLat = location.coords.latitude + (Math.random() - 0.5) * 0.01;
@@ -431,6 +441,23 @@ export default function EditProfileScreen() {
                                             {formData.latitude != null && formData.longitude != null ? `Lat: ${formData.latitude.toFixed(5)}, Long: ${formData.longitude.toFixed(5)}` : ''}
                                         </Text>
                                     )}
+                                </View>
+
+                                {/* Map Visibility Toggle */}
+                                <View className="mt-2 pt-4 border-t border-gray-100 dark:border-neutral-800 flex-row items-center justify-between">
+                                    <View className="flex-1 mr-4">
+                                        <Text className="text-gray-700 dark:text-gray-300 font-medium text-sm">Show on Map</Text>
+                                        <Text className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                            Allow your friends to see your location
+                                        </Text>
+                                    </View>
+                                    <Switch
+                                        trackColor={{ false: '#d1d5db', true: '#059669' }}
+                                        thumbColor={Platform.OS === 'ios' ? '#fff' : (formData.is_visible_on_map ? '#fff' : '#f4f3f4')}
+                                        ios_backgroundColor="#3e3e3e"
+                                        onValueChange={(val) => handleChange('is_visible_on_map', val)}
+                                        value={formData.is_visible_on_map}
+                                    />
                                 </View>
                             </View>
                         </View>

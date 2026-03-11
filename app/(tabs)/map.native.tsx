@@ -82,10 +82,11 @@ export default function MapScreen() {
     const fetchProfiles = async () => {
         try {
             // In a real app, you might use PostGIS for "nearby" queries.
-            // For now, we fetch all users with coordinates.
+            // For now, we fetch all visible users with coordinates.
             const { data, error } = await supabase
                 .from('profiles')
                 .select('id, username, full_name, avatar_url, skills, latitude, longitude')
+                .eq('is_visible_on_map', true)
                 .not('latitude', 'is', null)
                 .not('longitude', 'is', null);
 
