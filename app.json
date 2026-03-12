@@ -14,7 +14,16 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.cajuuh.garagejam",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "GarageJam needs access to your microphone to record and play back audio jams.",
+        "UIBackgroundModes": [
+          "audio",
+          "audio"
+        ],
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -46,11 +55,21 @@
           "android": {
             "memoryMaximumSize": "4096m",
             "usesCleartextTraffic": true,
-            "gradleVersion": "8.7", // Downgrade from 10.0
-            "kotlinVersion": "2.1.20", // Downgrade to a stable 1.9.x
-            "compileSdkVersion": 36, // Downgrade from 36
-            "targetSdkVersion": 35, // Downgrade from 36
+            "gradleVersion": "8.7",
+            "kotlinVersion": "2.1.20",
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 35,
             "buildToolsVersion": "35.0.0"
+          },
+          "ios": {
+            "supportsTablet": true,
+            "bundleIdentifier": "com.cajuuh.garagejam",
+            "infoPlist": {
+              "NSMicrophoneUsageDescription": "GarageJam needs access to your microphone to record and play back audio jams.",
+              "UIBackgroundModes": [
+                "audio"
+              ]
+            }
           }
         }
       ]

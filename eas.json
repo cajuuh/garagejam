@@ -7,7 +7,10 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "channel": "development"
+      "channel": "development",
+      "ios": {
+        "resourceClass": "m-medium"
+      }
     },
     "preview": {
       "extends": "production",
@@ -15,17 +18,23 @@
       "channel": "preview",
       "android": {
         "buildType": "apk"
+      },
+      "ios": {
+        "simulator": true
       }
-    },
-    "env": {
-      "INSTANT_RUN_DISABLE": "true",
-      "IS_EAS_BUILD": "true"
     },
     "production": {
       "channel": "production",
       "autoIncrement": true,
       "android": {
         "buildType": "app-bundle"
+      },
+      // "ios": {
+      //   "bundleIdentifier": "com.cajuuh.garagejam"
+      // },
+      "env": {
+        "INSTANT_RUN_DISABLE": "true",
+        "IS_EAS_BUILD": "true"
       }
     }
   },
