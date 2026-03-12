@@ -1,7 +1,7 @@
 {
   "cli": {
-    "appVersionSource": "local",
-    "version": ">= 10.0.0"
+    "version": ">= 10.0.0",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
@@ -10,11 +10,23 @@
       "channel": "development"
     },
     "preview": {
+      "extends": "production",
       "distribution": "internal",
-      "channel": "preview"
+      "channel": "preview",
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "env": {
+      "INSTANT_RUN_DISABLE": "true",
+      "IS_EAS_BUILD": "true"
     },
     "production": {
-      "channel": "production"
+      "channel": "production",
+      "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle"
+      }
     }
   },
   "submit": {
