@@ -1,4 +1,3 @@
-// /Users/pfcalcantara/Developer/GarageJam/metro.config.js
 const { getDefaultConfig } = require("expo/metro-config");
 const { withNativeWind } = require("nativewind/metro");
 
