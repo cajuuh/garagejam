@@ -1,0 +1,47 @@
+{
+  "cli": {
+    "version": ">= 10.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "channel": "development",
+      "ios": {
+        "resourceClass": "m-medium",
+        "simulator": true
+      },
+      "localOutputPath": "./local-builds/build-preview.tar.gz"
+    },
+    "preview": {
+      "extends": "production",
+      "distribution": "internal",
+      "channel": "preview",
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": true
+      },
+      "localOutputPath": "./local-builds/build-preview.tar.gz"
+    },
+    "production": {
+      "channel": "production",
+      "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle"
+      },
+      // "ios": {
+      //   "bundleIdentifier": "com.cajuuh.garagejam"
+      // },
+      "env": {
+        "INSTANT_RUN_DISABLE": "true",
+        "IS_EAS_BUILD": "true"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}

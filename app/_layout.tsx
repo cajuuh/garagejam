@@ -4,7 +4,7 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import * as SystemUI from 'expo-system-ui';
 import { useEffect, useState } from 'react';
-import { Platform } from 'react-native';
+import { Appearance, Platform } from 'react-native'; // Added Appearance
 import 'react-native-reanimated';
 import 'react-native-url-polyfill/auto';
 import '../global.css';
@@ -13,17 +13,20 @@ import { Session } from '@supabase/supabase-js';
 import { useColorScheme } from 'nativewind';
 import { supabase } from '../lib/supabase';
 
+// CRITICAL FIX: Force the native appearance to a non-null value 
+// before any other hooks run. This prevents the Kotlin NPE.
+if (Platform.OS === 'android') {
+  Appearance.setColorScheme('unspecified');
+}
+
 export {
-  // Catch any errors thrown by the Layout component.
   ErrorBoundary
 } from 'expo-router';
 
 export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
   initialRouteName: '(tabs)',
 };
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -35,7 +38,6 @@ export default function RootLayout() {
   const segments = useSegments();
   const router = useRouter();
 
-  // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
     if (error) throw error;
   }, [error]);
@@ -64,7 +66,6 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (!isAuthLoaded) return;
-
     const inAuthGroup = segments[0] === 'auth' || segments[0] === 'sign-up';
 
     if (!session && !inAuthGroup) {
@@ -87,19 +88,25 @@ function RootLayoutNav() {
   useEffect(() => {
     if (Platform.OS === 'web') {
       try {
-        // Clear persisted theme to ensure we respect the OS setting on reload
         localStorage.removeItem('nativewind-color-theme');
       } catch { }
     }
+
+    // FIX: Only set to 'system' if not on Android or if using a patched version.
+    // On RN 0.83, 'system' in NativeWind v4 often passes null to native.
     try {
-      setColorScheme('system');
+      if (Platform.OS !== 'android') {
+        setColorScheme('system');
+      }
     } catch (e) {
-      // Ignore error if darkMode is not 'class' in tailwind.config.js
+      console.warn("Theme initialization failed", e);
     }
   }, []);
 
   useEffect(() => {
-    SystemUI.setBackgroundColorAsync(colorScheme === 'dark' ? '#000000' : '#ffffff');
+    // Only call this if SystemUI is ready to avoid secondary crashes
+    SystemUI.setBackgroundColorAsync(colorScheme === 'dark' ? '#000000' : '#ffffff')
+      .catch(() => { /* ignore */ });
   }, [colorScheme]);
 
   return (
