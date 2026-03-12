@@ -9,8 +9,10 @@
       "distribution": "internal",
       "channel": "development",
       "ios": {
-        "resourceClass": "m-medium"
-      }
+        "resourceClass": "m-medium",
+        "simulator": true
+      },
+      "localOutputPath": "./local-builds/build-preview.tar.gz"
     },
     "preview": {
       "extends": "production",
@@ -21,7 +23,8 @@
       },
       "ios": {
         "simulator": true
-      }
+      },
+      "localOutputPath": "./local-builds/build-preview.tar.gz"
     },
     "production": {
       "channel": "production",
