@@ -26,14 +26,11 @@ export default function HomeScreen() {
       // 1. Get friend IDs
       let friendIds: string[] = [];
       if (session?.user) {
-        const { data: connections } = await supabase
-          .from('connections')
-          .select('requester_id, receiver_id')
-          .eq('status', 'accepted')
-          .or(`requester_id.eq.${session.user.id},receiver_id.eq.${session.user.id}`);
+        // Use the same robust RPC function we use in the FAB
+        const { data: friendsData } = await supabase.rpc('get_friends');
 
-        if (connections) {
-          friendIds = connections.map(c => c.requester_id === session.user.id ? c.receiver_id : c.requester_id);
+        if (friendsData) {
+          friendIds = friendsData.map((f: any) => f.id);
         }
       }
 

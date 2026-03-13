@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useAudioPlayer } from 'expo-audio';
 import { useRouter } from 'expo-router';
 import { Check, Pause, Play } from 'lucide-react-native';
@@ -30,6 +31,17 @@ export default function MusicianCard({ profile }: { profile: MusicianProfile }) 
         } else {
             player.play();
         }
+    };
+
+    const handleOpenChat = (e: any) => {
+        e.stopPropagation();
+        router.push({
+            pathname: '/chat',
+            params: {
+                friendId: profile.id,
+                friendName: profile.username || profile.full_name
+            }
+        });
     };
 
     return (
@@ -112,6 +124,17 @@ export default function MusicianCard({ profile }: { profile: MusicianProfile }) 
                     )}
                 </View>
             </View>
+
+            {/* 4. Chat Button */}
+            {profile.is_friend && (
+                <TouchableOpacity
+                    onPress={handleOpenChat}
+                    className="w-full flex-row items-center justify-center bg-[#007AFF] py-3 px-4 rounded-2xl mt-4"
+                >
+                    <Ionicons name="chatbubbles" size={18} color="white" />
+                    <Text className="text-white font-bold ml-2 text-xs uppercase tracking-widest">Message</Text>
+                </TouchableOpacity>
+            )}
         </TouchableOpacity>
     );
 }
