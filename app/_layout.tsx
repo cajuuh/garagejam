@@ -1,16 +1,18 @@
+import { Ionicons } from '@expo/vector-icons';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import * as SystemUI from 'expo-system-ui';
+import { useColorScheme } from 'nativewind';
 import { useEffect, useState } from 'react';
-import { Appearance, Platform } from 'react-native'; // Added Appearance
+import { Appearance, Platform, View } from 'react-native'; // Added Appearance
+import { MD3DarkTheme, MD3LightTheme, PaperProvider } from 'react-native-paper';
 import 'react-native-reanimated';
 import 'react-native-url-polyfill/auto';
 import '../global.css';
 
 import { Session } from '@supabase/supabase-js';
-import { useColorScheme } from 'nativewind';
+import FriendsFab from '../components/FriendsFab';
 import { supabase } from '../lib/supabase';
 
 // CRITICAL FIX: Force the native appearance to a non-null value 
@@ -66,6 +68,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (!isAuthLoaded) return;
+    // Allow access to auth and sign-up screens
     const inAuthGroup = segments[0] === 'auth' || segments[0] === 'sign-up';
 
     if (!session && !inAuthGroup) {
@@ -79,46 +82,53 @@ export default function RootLayout() {
     return null;
   }
 
-  return <RootLayoutNav />;
+  return <RootLayoutNav session={session} />;
 }
 
-function RootLayoutNav() {
-  const { colorScheme, setColorScheme } = useColorScheme();
+// Extracted navigation logic to ensure clean Fast Refresh boundaries
+function RootLayoutNav({ session }: { session: Session | null }) {
+  const { colorScheme } = useColorScheme();
+  const baseTheme = colorScheme === 'dark' ? MD3DarkTheme : MD3LightTheme;
 
-  useEffect(() => {
-    if (Platform.OS === 'web') {
-      try {
-        localStorage.removeItem('nativewind-color-theme');
-      } catch { }
-    }
+  // Customize Paper theme to match GarageJam Blue (#007AFF)
+  const paperTheme = {
+    ...baseTheme,
+    colors: {
+      ...baseTheme.colors,
+      primary: '#007AFF',
+      onPrimary: '#FFFFFF',
+      primaryContainer: '#007AFF', // FAB background
+      onPrimaryContainer: '#FFFFFF', // FAB icon color
+      secondaryContainer: '#007AFF',
+      onSecondaryContainer: '#FFFFFF',
+      background: colorScheme === 'dark' ? '#121212' : '#FFFFFF',
+    },
+  };
+  const segments = useSegments();
 
-    // FIX: Only set to 'system' if not on Android or if using a patched version.
-    // On RN 0.83, 'system' in NativeWind v4 often passes null to native.
-    try {
-      if (Platform.OS !== 'android') {
-        setColorScheme('system');
-      }
-    } catch (e) {
-      console.warn("Theme initialization failed", e);
-    }
-  }, []);
-
-  useEffect(() => {
-    // Only call this if SystemUI is ready to avoid secondary crashes
-    SystemUI.setBackgroundColorAsync(colorScheme === 'dark' ? '#000000' : '#ffffff')
-      .catch(() => { /* ignore */ });
-  }, [colorScheme]);
+  const showFab = session && segments[segments.length - 1] !== 'chat';
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="auth" options={{ headerShown: false }} />
-        <Stack.Screen name="sign-up" options={{ headerShown: false }} />
-        <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
-        <Stack.Screen name="user/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
-    </ThemeProvider>
+    <PaperProvider
+      theme={paperTheme}
+      settings={{
+        // Switch all Paper icons to Ionicons
+        icon: (props) => <Ionicons {...props} />,
+      }}
+    >
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <View style={{ flex: 1 }}>
+          <Stack>
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="auth" options={{ headerShown: false }} />
+            <Stack.Screen name="sign-up" options={{ headerShown: false }} />
+            <Stack.Screen name="edit-profile" options={{ headerShown: false }} />
+            <Stack.Screen name="user/[id]" options={{ headerShown: false }} />
+            <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+          </Stack>
+          {showFab && <FriendsFab />}
+        </View>
+      </ThemeProvider>
+    </PaperProvider>
   );
 }
